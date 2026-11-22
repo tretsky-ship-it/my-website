@@ -746,7 +746,7 @@
       const ph = D.photos[d.photo];
       const places = d.places.map((id) => BY_ID[id]).filter((p) => p && (!p.status || p.status === "ok"));
       return `<article class="dish">
-        <figure><img src="${ph.src}" alt="${esc(ph.alt)}" width="720" height="540" loading="lazy"><figcaption>${photoCredit(ph)}${ph.at && BY_ID[ph.at] ? ` · taken at ${esc(BY_ID[ph.at].name)}` : ""}</figcaption></figure>
+        <figure><img src="${ph.src}" alt="${esc(ph.alt)}" width="720" height="540" loading="lazy"><figcaption>${photoCredit(ph)}${ph.at && BY_ID[ph.at] ? ` · taken at ${esc(BY_ID[ph.at].name)}` : ""}${ph.note ? ` · ${esc(ph.note)}` : ""}</figcaption></figure>
         <div class="dish-body"><h4>${esc(d.name)}</h4><p>${esc(d.what)}</p>
         ${places.length ? `<p class="dish-try"><b>Try it at:</b> ${places.map((p) => `<a href="#${p.id}" data-goto-food="${p.id}">${esc(p.name)}</a> <span class="muted">(${esc(ISL[p.island].name)})</span>`).join(", ")}</p>` : `<p class="dish-try muted">Easy to find at markets and convenience stores on every island.</p>`}</div>
       </article>`;
@@ -781,7 +781,7 @@
     const rank = (p) => (D.foodPlacement[p.id].star ? 0 : 100) - (p.sources || []).length * 6 + (isVerified(p) ? 0 : 4) + D.foodPlacement[p.id].rank;
     let groups;
     if (foodState.group === "type") {
-      const typePhoto = { hawaiian: "laulau", local: "plate-lunch", seafood: "ahi-poke", sweets: "haupia" };
+      const typePhoto = { hawaiian: "laulau", local: "plate-lunch", seafood: "ahi-poke", sweets: "haupia", shaveice: "shave-ice" };
       groups = D.foodTypes.map((t) => ({ title: t.label, sub: t.blurb, photo: typePhoto[t.id], items: list.filter((p) => D.foodPlacement[p.id].type === t.id) }));
     } else {
       groups = [];
