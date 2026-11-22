@@ -768,7 +768,7 @@
     const pl = D.foodPlacement[p.id] || {};
     const saved = state.saved.has(p.id);
     const facts = [["What to order", p.signature], ["Type", `${typeLabel(p)} · ${p.cuisine}`], ["Where", `${pl.region}, ${ISL[p.island].name}`], ["Address", p.address], ["Phone", p.phone],
-      ["Hours", p.hours ? `${p.hours} (from the official site; subject to change)` : "Check before you go"], ["Meals", p.meals.join(", ")], ["Price", `${priceLabel(p.price)}, ${priceBasis(p.price)} (estimate)`], ["Reservations", p.reservations], ["Setting", p.setting]].filter((f) => f[1]);
+      ["Hours", p.hours ? `${p.hours} (from the official site; subject to change)` : "Check before you go"], ["Meals", p.meals.join(", ")], ["Meat-free options", vegInfo(p) === "mentioned" ? "Yes, mentioned in a guide (check the menu)" : vegInfo(p) ? "Likely, based on the kind of food (check the menu)" : "Not noted; ask the restaurant"], ["Price", `${priceLabel(p.price)}, ${priceBasis(p.price)} (estimate)`], ["Reservations", p.reservations], ["Setting", p.setting]].filter((f) => f[1]);
     return `<div class="fd-inner">
       ${ph.length ? `<div class="fd-carousel">
         <div class="fd-track" tabindex="0" aria-label="Photos">${ph.map((k) => { const x = D.photos[k]; return `<figure><img src="${x.src}" alt="${esc(x.alt)}" width="720" height="540" loading="lazy"><figcaption>${x.at === p.id ? "Photo taken here" : "Dishes like this, not necessarily from here"} · ${photoCredit(x)}</figcaption></figure>`; }).join("")}</div>
@@ -806,6 +806,16 @@
       } else { panel.hidden = true; panel.innerHTML = ""; }
     }));
   }
+  /* Meat-free options: "mentioned" when a source calls out vegetarian/vegan choices; "likely" when the kind of food usually has them. */
+  const VEG_MENTION = new Set(["f-tikitacos", "f-kalaheocafe", "f-shakalafel", "f-hanaleitaro", "f-littlefish", "f-hilomarket", "f-kcc", "f-kauaimarket"]);
+  const VEG_WORDS = /falafel|mediterranean|thai|pizza|mexican|taco|sushi|izakaya|japanese|farm|italian|açaí|acai|vegan|vegetarian|taro|bakery|pastr|bread|donut|malasada|coffee|shave ice|ice cream|cafe|café|market/i;
+  function vegInfo(p) {
+    if (VEG_MENTION.has(p.id)) return "mentioned";
+    const t = (D.foodPlacement[p.id] || {}).type;
+    if (["sweets", "shaveice", "coffee", "markets", "special"].includes(t)) return "likely";
+    return VEG_WORDS.test(`${p.cuisine} ${p.kind} ${p.signature}`) ? "likely" : null;
+  }
+  const vegBadge = (p) => { const v = vegInfo(p); return v ? ` <span class="badge badge-veg" title="${v === "mentioned" ? "A guide mentions vegetarian or vegan options. Check the menu." : "Likely, based on the kind of food. Check the menu."}">Meat-free options${v === "likely" ? " (likely)" : ""}</span>` : ""; };
   let popularMarked = false;
   function markPopular() {
     if (popularMarked) return; popularMarked = true;
@@ -841,6 +851,7 @@
     $$("#ffIsland input").forEach((i) => (i.onchange = () => { foodState.island = i.value; foodState.area = ""; foodState.limit = 30; fillAreas(); drawFood(); }));
     [["ffArea", "area"], ["ffMeal", "meal"], ["ffPrice", "price"], ["ffSort", "sort"]].forEach(([id, k]) => ($("#" + id).onchange = (e) => { foodState[k] = e.target.value; foodState.limit = 30; drawFood(); }));
     $("#ffPopular").onchange = (e) => { foodState.popularOnly = e.target.checked; drawFood(); };
+    $("#ffVeg").onchange = (e) => { foodState.veg = e.target.checked; foodState.limit = 30; drawFood(); };
     $("#foodOpenOnly").onchange = (e) => { foodState.openOnly = e.target.checked; drawFood(); };
     $$(".seg-btn[data-view]").forEach((b) => (b.onclick = () => { foodState.view = b.dataset.view; $$(".seg-btn[data-view]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); drawFood(); }));
     fillAreas();
@@ -862,6 +873,7 @@
       if (f.meal && !p.meals.includes(f.meal)) return false;
       if (f.price && p.price > +f.price) return false;
       if (f.popularOnly && !p.popular) return false;
+      if (f.veg && !vegInfo(p)) return false;
       return true;
     });
   }
@@ -882,7 +894,7 @@
           <div class="fl-main">
             <button type="button" class="fr-name fr-toggle" data-fd="${p.id}" data-k="${K}" aria-expanded="false" aria-controls="fd-${p.id}-${K}">${esc(p.name)}<span class="fr-caret" aria-hidden="true">▾</span></button>${popBadges(p)}${pl.star ? ` <span class="badge badge-star">Must-try</span>` : ""}
             <span class="fr-sub">${esc(typeLabel(p))} · ${esc(pl.region)}, ${esc(ISL[p.island].name)} · ${esc(p.signature)}</span>
-            <span class="fl-meta">${n ? `In ${n} ${n === 1 ? "guide" : "guides"}` : "Editor's pick"} · ${esc(p.meals.join(", "))}${isVerified(p) ? ` · <span class="badge badge-ok">Checked</span>` : ""}${p.status === "temp-closed" ? ` · <span class="badge badge-bad">Temporarily closed</span>` : p.status === "unconfirmed" ? ` · <span class="badge badge-bad">Unconfirmed</span>` : ""}</span>
+            <span class="fl-meta">${n ? `In ${n} ${n === 1 ? "guide" : "guides"}` : "Editor's pick"} · ${esc(p.meals.join(", "))}${vegBadge(p)}${isVerified(p) ? ` · <span class="badge badge-ok">Checked</span>` : ""}${p.status === "temp-closed" ? ` · <span class="badge badge-bad">Temporarily closed</span>` : p.status === "unconfirmed" ? ` · <span class="badge badge-bad">Unconfirmed</span>` : ""}</span>
           </div>
           <div class="fl-side">
             ${pineHTML(p)}
@@ -1011,6 +1023,7 @@
       <div class="field"><label for="pDrive">Driving per day</label>${sel("pDrive", [["low", "Up to 1.5 hours"], ["medium", "Up to 3 hours"], ["high", "Up to 4.5 hours"]], pi.driveTol)}</div>
       <fieldset class="span4 plan-food"><legend>What do you like to eat? <span class="muted small">(pick any; none means everything)</span></legend>
         <div class="chips">${D.foodTypes.map((t) => `<label class="chip" for="pft-${t.id}"><input type="checkbox" id="pft-${t.id}" value="${t.id}" ${(pi.foodTypes || []).includes(t.id) ? "checked" : ""}><span>${esc(t.label)}</span></label>`).join("")}</div>
+        <label class="check plan-veg" for="pVeg"><input type="checkbox" id="pVeg" ${pi.veg ? "checked" : ""}> Only places with meat-free options</label>
       </fieldset>
       <div class="field span2"><label for="pMeals">How should meals work in your plan?</label><select id="pMeals">
         <option value="suggest" ${(pi.mealMode || "suggest") === "suggest" ? "selected" : ""}>Pick places for me (and show what's nearby)</option>
@@ -1063,7 +1076,7 @@
       islands, group: $("#pGroup").value, pace: $("#pPace").value, budget: $("#pBudget").value, mobility: $("#pMob").value,
       interests: $$(".planner-form .chips input:checked").map((i) => i.value), car: $("#pCar").value, driveTol: $("#pDrive").value, diet: $("#pDiet").value.trim(),
       useSaved: $("#pUseSaved").checked, fill: $("#pFill").checked,
-      foodTypes: $$(".plan-food input:checked").map((i) => i.value), mealMode: $("#pMeals").value,
+      foodTypes: $$(".plan-food .chips input:checked").map((i) => i.value), mealMode: $("#pMeals").value, veg: $("#pVeg").checked,
     };
   }
 
@@ -1082,7 +1095,7 @@
     $("#planner").scrollIntoView({ behavior: "smooth" });
   }
 
-  const foodMatches = (p, pi) => !pi.foodTypes || !pi.foodTypes.length || pi.foodTypes.includes((D.foodPlacement[p.id] || {}).type);
+  const foodMatches = (p, pi) => (!pi.veg || vegInfo(p)) && (!pi.foodTypes || !pi.foodTypes.length || pi.foodTypes.includes((D.foodPlacement[p.id] || {}).type));
   /* "Food near today": top matching places near the day's first stop (or the base). */
   function foodNearHTML(day, di, pi) {
     if ((pi.mealMode || "suggest") === "none") return "";
