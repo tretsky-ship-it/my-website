@@ -38,10 +38,10 @@
   --focus: #e0761c;
   --shadow: 0 1px 2px rgba(13, 43, 62, .06), 0 4px 16px rgba(13, 43, 62, .07);
 
-  --font-poster: "Shrikhand", "Cooper Black", Georgia, serif;          /* travel-poster display */
-  --font-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif; /* condensed signage */
-  --font-body: "Atkinson Hyperlegible", Verdana, "Segoe UI", sans-serif;
-  --font-mono: "Big Shoulders Display", "Arial Narrow", sans-serif;     /* labels, dates, prices */
+  --font-poster: "Fredoka", "Varela Round", "Trebuchet MS", sans-serif;   /* soft rounded display */
+  --font-display: "Fredoka", "Varela Round", "Trebuchet MS", sans-serif;  /* labels, titles */
+  --font-body: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-mono: "Fredoka", "Trebuchet MS", sans-serif;                     /* labels, dates, prices */
   --ridge-1: #5cb85f;
   --hero-line: rgba(13, 43, 62, .4);
   --hero-shadow: rgba(255, 255, 255, .7);
@@ -615,3 +615,31 @@ h4 { font-size: 1.12rem; }
 .photo-credits ul { columns: 2 280px; padding-left: 1.1rem; margin: .5rem 0 0; }
 .place-photo { margin: 0 -1.25rem; }
 .place-photo figcaption { padding: .3rem 1.25rem 0; }
+
+/* =====================================================================
+   Softer type: rounded Fredoka for headings and labels, Nunito for text.
+   Sentence case instead of all-caps; gentler corners to match.
+   ===================================================================== */
+body { font-size: 1.05rem; }
+h1, h2 { font-weight: 600; letter-spacing: -.01em; }
+h3, h4 { font-weight: 600; letter-spacing: 0; }
+h3 { font-size: 1.35rem; }
+.hero h1 { font-weight: 700; line-height: 1.04; }
+.brand { font-weight: 600; font-size: 1.2rem; }
+.section-head h2 { font-size: clamp(2rem, 4.4vw, 2.7rem); }
+.eyebrow { font-weight: 600; font-size: .85rem; letter-spacing: .12em; }
+.mainnav a { font-weight: 500; font-size: 1rem; text-transform: none; letter-spacing: 0; }
+.trip-pill-label { font-weight: 600; text-transform: none; letter-spacing: 0; }
+.btn { font-weight: 600; font-size: 1rem; text-transform: none; letter-spacing: .01em; border-radius: 999px; padding: .6rem 1.2rem; }
+.btn-sm { font-size: .9rem; padding: .36rem .85rem; }
+.seg { border-radius: 999px; }
+.seg-btn { font-weight: 600; text-transform: none; letter-spacing: 0; }
+.tabs [role="tab"] { font-weight: 600; text-transform: none; letter-spacing: 0; }
+.chip span { border-radius: 999px; font-weight: 500; letter-spacing: 0; }
+.badge { font-weight: 600; letter-spacing: .03em; border-radius: 999px; padding: .1rem .55rem; text-transform: none; }
+.place-kicker, .quiz-step, .match .rank, .block .slot, .compare thead th { font-weight: 500; letter-spacing: .04em; }
+.card, .dish, .trip-pill { border-radius: 14px; }
+.food-group, .day { border-radius: 14px; }
+.dish img { border-radius: 12px 12px 0 0; }
+.wx-temp, .nights-out, .summary-grid b, .dish-body h4 { font-weight: 600; }
+.ticks li::before { border-radius: 50%; transform: none; }
