@@ -733,6 +733,49 @@
     if (el) { el.scrollIntoView({ behavior: "smooth", block: "center" }); el.style.outline = "3px solid var(--accent)"; setTimeout(() => (el.style.outline = ""), 2500); }
   }
 
+  /* ========================================================== FOOD LIST */
+  const foodState = { group: "type", island: "", openOnly: true };
+  function renderFoodList() {
+    $("#foodIslands").innerHTML = [["", "All islands"], ...D.islands.map((i) => [i.id, i.name])].map(([id, n]) =>
+      `<label class="chip" for="fi-${id || "all"}"><input type="radio" name="foodIsl" id="fi-${id || "all"}" value="${id}" ${foodState.island === id ? "checked" : ""}><span>${esc(n)}</span></label>`).join("");
+    $$("#foodIslands input").forEach((i) => (i.onchange = () => { foodState.island = i.value; drawFoodGroups(); }));
+    $$(".seg-btn").forEach((b) => (b.onclick = () => { foodState.group = b.dataset.group; $$(".seg-btn").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); drawFoodGroups(); }));
+    $("#foodOpenOnly").onchange = (e) => { foodState.openOnly = e.target.checked; drawFoodGroups(); };
+    drawFoodGroups();
+  }
+  function foodRow(p, groupBy) {
+    const pl = D.foodPlacement[p.id];
+    const status = p.status === "temp-closed" ? `<span class="badge badge-bad">Temporarily closed</span>` : p.status === "unconfirmed" ? `<span class="badge badge-bad">Unconfirmed</span>` : isVerified(p) ? `<span class="badge badge-ok">Checked</span>` : "";
+    const where = groupBy === "type" ? `${pl.region}, ${ISL[p.island].name}` : (D.foodTypes.find((t) => t.id === pl.type) || {}).label;
+    return `<li class="food-row${p.status && p.status !== "ok" ? " is-off" : ""}">
+      <div class="fr-main">
+        <a href="#${p.id}" class="fr-name" data-goto-food="${p.id}">${esc(p.name)}</a>${pl.star ? ` <span class="badge badge-star">Must-try</span>` : ""}
+        <span class="fr-sub">${esc(where)} · ${esc(p.signature)}</span>
+      </div>
+      <div class="fr-side"><span class="fr-price" title="${esc(priceBasis(p.price))}">${priceLabel(p.price)}</span>${status}${p.web ? `<a class="fr-web" href="${p.web}" target="_blank" rel="noopener" aria-label="${esc(p.name)} official website">Site ↗</a>` : ""}</div>
+    </li>`;
+  }
+  function drawFoodGroups() {
+    const list = D.food.filter((p) => D.foodPlacement[p.id] && (!foodState.island || p.island === foodState.island) && (!foodState.openOnly || !p.status || p.status === "ok"));
+    const rank = (p) => (D.foodPlacement[p.id].star ? 0 : 100) + (isVerified(p) ? 0 : 10) + D.foodPlacement[p.id].rank;
+    let groups;
+    if (foodState.group === "type") {
+      groups = D.foodTypes.map((t) => ({ title: t.label, sub: t.blurb, items: list.filter((p) => D.foodPlacement[p.id].type === t.id) }));
+    } else {
+      groups = [];
+      D.islands.forEach((i) => {
+        const regions = [...new Set(list.filter((p) => p.island === i.id).map((p) => D.foodPlacement[p.id].region))];
+        regions.forEach((r) => groups.push({ title: r, sub: i.name, items: list.filter((p) => p.island === i.id && D.foodPlacement[p.id].region === r) }));
+      });
+    }
+    groups = groups.filter((g) => g.items.length);
+    $("#foodGroups").innerHTML = groups.length ? groups.map((g) => `<section class="food-group card">
+        <header><h3>${esc(g.title)}</h3><p class="small muted">${esc(g.sub)} · ${g.items.length} ${g.items.length === 1 ? "pick" : "picks"}</p></header>
+        <ol class="food-rows">${g.items.sort((a, b) => rank(a) - rank(b)).map((p) => foodRow(p, foodState.group)).join("")}</ol>
+      </section>`).join("") : `<div class="empty">No picks match. Try all islands.</div>`;
+    $$("[data-goto-food]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); showPlace(a.dataset.gotoFood); }));
+  }
+
   /* ============================================================ HISTORY */
   function renderHistory() {
     $("#historyKinds").innerHTML = D.historyKinds.map((k) => `<div class="card"><h3>${esc(k.kind)}</h3><p>${esc(k.text)}</p></div>`).join("");
@@ -1330,6 +1373,7 @@
     renderBetween();
     renderWhen();
     renderWeatherControls();
+    renderFoodList();
     renderDirectory();
     renderHistory();
     renderPlannerForm();

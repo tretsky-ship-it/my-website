@@ -26,6 +26,7 @@
       <a href="#between">Hopping</a>
       <a href="#when">When to go</a>
       <a href="#weather">Weather</a>
+      <a href="#food">Food</a>
       <a href="#directory">Places</a>
       <a href="#history">History</a>
       <a href="#planner">Planner</a>
@@ -177,6 +178,27 @@
           <li><a data-src="climateNormals"></a></li>
         </ul>
       </div>
+    </div>
+  </section>
+
+  <!-- Food guide -->
+  <section class="section food-section" id="food" aria-labelledby="food-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Where to eat</p>
+        <h2 id="food-title">The food list</h2>
+        <p class="section-lede">Our top picks on every island, grouped the way you'd actually choose: by where you'll be, or by what you're craving. Picks marked <span class="badge badge-star">Must-try</span> are the ones we'd plan a day around.</p>
+      </header>
+      <div class="food-controls">
+        <div class="seg" role="group" aria-label="Group food by">
+          <button type="button" class="seg-btn" data-group="type" aria-pressed="true">By type of food</button>
+          <button type="button" class="seg-btn" data-group="area" aria-pressed="false">By area</button>
+        </div>
+        <div class="chips" role="group" aria-label="Island" id="foodIslands"></div>
+        <label class="check" for="foodOpenOnly"><input type="checkbox" id="foodOpenOnly" checked> Hide closed or unconfirmed</label>
+      </div>
+      <div class="food-groups" id="foodGroups"></div>
+      <p class="small muted food-note">Ranked by our editors, not by star ratings. Places checked against their official websites on 2026-11-22 show a <span class="badge badge-ok">Checked</span> label. We don't show review-site ratings here; each full listing has a separate Yelp link.</p>
     </div>
   </section>
 

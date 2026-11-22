@@ -836,3 +836,49 @@ HWP.foodChecks = {
   "f-nobu": { verified: { date: "2026-11-22", source: "noburestaurants.com" }, status: "ok",
     reservations: "Reservations through the official Nobu Lānaʻi page", web: "https://www.noburestaurants.com/lanai/home" },
 };
+
+/* --------------------------------------------------- Food list grouping */
+/* type: what you're craving. region: the part of the island you'll be in.
+   star: editors' must-try. rank: editorial order within a group. */
+HWP.foodTypes = [
+  { id: "hawaiian", label: "Hawaiian food", blurb: "Kalua pig, laulau, poi and lomi salmon" },
+  { id: "local", label: "Plate lunch & local diners", blurb: "Two scoops rice, mac salad, loco moco, saimin" },
+  { id: "seafood", label: "Poke & seafood", blurb: "Fresh fish, poke bowls, garlic shrimp" },
+  { id: "sweets", label: "Bakeries & sweets", blurb: "Malasadas, cream puffs, pies, donuts" },
+  { id: "shaveice", label: "Shave ice", blurb: "Fluffy ice, house syrups, ice cream underneath" },
+  { id: "markets", label: "Farmers markets", blurb: "Tropical fruit, prepared food, local growers" },
+  { id: "special", label: "Special-occasion dining", blurb: "Worth booking ahead" },
+  { id: "bars", label: "Bars & casual evenings", blurb: "Mai tais, pizza, live music" },
+];
+HWP.foodPlacement = {
+  "f-helenas": { type: "hawaiian", region: "Honolulu", star: true, rank: 1 },
+  "f-highwayinn": { type: "hawaiian", region: "Honolulu", rank: 2 },
+  "f-rainbow": { type: "local", region: "Honolulu", star: true, rank: 1 },
+  "f-cafe100": { type: "local", region: "Hilo", star: true, rank: 2 },
+  "f-hamura": { type: "local", region: "Līhuʻe", star: true, rank: 3 },
+  "f-tinroof": { type: "local", region: "Kahului", star: true, rank: 4 },
+  "f-kens": { type: "local", region: "Hilo", rank: 5 },
+  "f-blueginger": { type: "local", region: "Lānaʻi City", rank: 6 },
+  "f-dapoke": { type: "seafood", region: "Kona", rank: 1 },
+  "f-giovannis": { type: "seafood", region: "North Shore", rank: 2 },
+  "f-leonards": { type: "sweets", region: "Honolulu", star: true, rank: 1 },
+  "f-liliha": { type: "sweets", region: "Honolulu", rank: 2 },
+  "f-komoda": { type: "sweets", region: "Upcountry", star: true, rank: 3 },
+  "f-holeygrail": { type: "sweets", region: "Hanalei", star: true, rank: 4 },
+  "f-leodas": { type: "sweets", region: "West Maui", rank: 5 },
+  "f-bigislandcandies": { type: "sweets", region: "Hilo", rank: 6 },
+  "f-punaluu": { type: "sweets", region: "Kaʻū", rank: 7 },
+  "f-matsumoto": { type: "shaveice", region: "North Shore", star: true, rank: 1 },
+  "f-ululanis": { type: "shaveice", region: "Kahului", rank: 2 },
+  "f-hilomarket": { type: "markets", region: "Hilo", star: true, rank: 1 },
+  "f-kcc": { type: "markets", region: "Honolulu", rank: 2 },
+  "f-kauaimarket": { type: "markets", region: "Līhuʻe", rank: 3 },
+  "f-mamas": { type: "special", region: "Pāʻia", star: true, rank: 1 },
+  "f-merrimans": { type: "special", region: "Waimea", star: true, rank: 2 },
+  "f-nobu": { type: "special", region: "Mānele", rank: 3 },
+  "f-haliimaile": { type: "special", region: "Upcountry", rank: 4 },
+  "f-baracuda": { type: "special", region: "Hanalei", rank: 5 },
+  "f-lcgrille": { type: "special", region: "Lānaʻi City", rank: 6 },
+  "f-tahitinui": { type: "bars", region: "Hanalei", star: true, rank: 1 },
+  "f-peles": { type: "bars", region: "Lānaʻi City", rank: 2 },
+};
