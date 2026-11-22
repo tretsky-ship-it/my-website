@@ -19,7 +19,7 @@
   /* ------------------------------------------------------------ lookups */
   const ISL = Object.fromEntries(D.islands.map((i) => [i.id, i]));
   const islandName = (id) => (ISL[id] ? ISL[id].name : id);
-  D.food.forEach((p) => (p.kind2 = "food"));
+  D.food.forEach((p) => { p.kind2 = "food"; if (D.foodChecks && D.foodChecks[p.id]) Object.assign(p, D.foodChecks[p.id]); });
   D.beaches.forEach((p) => (p.kind2 = "beaches"));
   D.sights.forEach((p) => (p.kind2 = "sights"));
   const ALL = [...D.food, ...D.beaches, ...D.sights];
@@ -582,7 +582,9 @@
   }
 
   /* ========================================================== DIRECTORY */
-  const statusBadges = (p) => `<span class="badge badge-ed">Editorial pick</span>${p.verified && p.verified.date ? `<span class="badge badge-ok">Verified ${esc(p.verified.date)}</span>` : `<span class="badge badge-warn">Not yet verified</span>`}<span>Description reviewed ${D.meta.contentDate}</span>`;
+  const isVerified = (p) => !!(p.verified && p.verified.date && p.status !== "unconfirmed");
+  const statusBadges = (p) => `<span class="badge badge-ed">Editorial pick</span>${isVerified(p) ? `<span class="badge badge-ok">Checked on official site ${esc(p.verified.date)}</span>` : p.status === "unconfirmed" ? `<span class="badge badge-bad">Couldn't confirm it's open</span>` : `<span class="badge badge-warn">Not yet verified</span>`}<span>Description reviewed ${D.meta.contentDate}</span>`;
+  const statusAlert = (p) => p.status === "temp-closed" ? `<div class="callout bad"><strong>Temporarily closed</strong>${esc(p.note)}</div>` : p.status === "unconfirmed" ? `<div class="callout warn"><strong>Status unconfirmed</strong>${esc(p.note || "")}</div>` : p.note ? `<p class="small muted">${esc(p.note)}</p>` : "";
 
   function placeCard(p) {
     const saved = state.saved.has(p.id);
@@ -590,7 +592,7 @@
     let kicker, facts = [], extra = "", links = [];
     if (p.kind2 === "food") {
       kicker = `${p.kind} · ${isl.name}`;
-      facts = [["Area", p.area], ["Order", p.signature], ["Meals", p.meals.join(", ")], ["Price", `${priceLabel(p.price)} · ${priceBasis(p.price)} (estimate)`], ["Reservations", p.reservations], ["Setting", p.setting], ["Hours", "Subject to change. Check the official site."]];
+      facts = [["Area", p.area], ["Address", p.address], ["Phone", p.phone], ["Hours", p.hours ? `${p.hours} (as listed on the official site; subject to change)` : "Not listed here. Check the official site."], ["Order", p.signature], ["Meals", p.meals.join(", ")], ["Price", `${priceLabel(p.price)} · ${priceBasis(p.price)} (estimate)`], ["Reservations", p.reservations], ["Setting", p.setting]];
       links.push(p.web ? `<a class="btn btn-sm primary-link" href="${p.web}" target="_blank" rel="noopener">${esc(p.webLabel)} ↗</a>` : `<span class="small muted">${esc(p.webLabel)}</span>`);
       links.push(`<a class="btn btn-ghost btn-sm" href="${mapUrl(p)}" target="_blank" rel="noopener">Map ↗</a>`);
       links.push(`<a class="btn btn-ghost btn-sm" href="${yelpUrl(p)}" target="_blank" rel="noopener" title="Yelp ratings are separate from our editorial pick">Find on Yelp ↗</a>`);
@@ -615,6 +617,7 @@
       <div class="place-top"><div><p class="place-kicker">${esc(kicker)}</p><h3>${esc(p.name)}</h3></div>
         <button type="button" class="btn btn-ghost btn-sm save-btn" data-save="${p.id}" aria-pressed="${saved}" aria-label="${saved ? "Remove" : "Save"} ${esc(p.name)}">${saved ? "Saved" : "Save"}</button></div>
       ${dist}
+      ${p.kind2 === "food" ? statusAlert(p) : ""}
       <p class="why"><b>Why go:</b> ${esc(p.why)}</p>
       ${p.tags ? `<div class="tags">${p.tags.map((t) => `<span class="badge">${esc(t)}</span>`).join("")}</div>` : ""}
       <dl class="facts">${facts.filter((f) => f[1]).map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
@@ -868,6 +871,7 @@
   const needsBooking = (p) => p && ((p.reservation && /reserv|required|ticket/i.test(p.reservation) && !/^None/i.test(p.reservation)) || (p.reservations && /recommend|required|essential|ahead/i.test(p.reservations)));
   const isFullDay = (p) => p && p.duration && /full day/i.test(p.duration);
   function suits(p, pi) {
+    if (p.status === "temp-closed" || p.status === "unconfirmed") return false;
     if (pi.mobility === "wheel" && p.effort && !/^Easy/.test(p.effort)) return false;
     if (pi.mobility === "wheel" && p.kind2 === "beaches" && !/Swimming|Kids/.test(p.bestFor.join(" "))) return false;
     if (pi.mobility === "some" && p.effort && /strenuous|steep/i.test(p.effort) && !/^Easy/.test(p.effort)) return false;
@@ -1062,7 +1066,7 @@
         <ol class="blocks">${day.blocks.map((b, bi) => {
           const p = BY_ID[b.ref];
           const title = p ? `<a href="#${p.id}" data-goto="${p.id}">${esc(p.name)}</a>` : esc(b.text);
-          const meta = p ? [p.kind2 === "food" ? `${p.kind} · ${priceLabel(p.price)}` : p.duration || (p.bestFor && p.bestFor.join(", ")), b.meta, needsBooking(p) ? "Reservation needed" : "", p.verified && p.verified.date ? "" : "Verify before you go"].filter(Boolean).join(" · ") : b.meta;
+          const meta = p ? [p.kind2 === "food" ? `${p.kind} · ${priceLabel(p.price)}` : p.duration || (p.bestFor && p.bestFor.join(", ")), b.meta, needsBooking(p) ? "Reservation needed" : "", isVerified(p) ? "" : "Verify before you go"].filter(Boolean).join(" · ") : b.meta;
           return `<li class="block ${b.type}">
             <span class="slot">${esc(b.slot)}</span>
             <div class="what"><b>${title}</b>${meta ? `<span class="meta">${esc(meta)}</span>` : ""}</div>
@@ -1087,7 +1091,7 @@
       <div class="card"><h3>Booking and permit checklist</h3>
         <ul class="checklist">${tasks.map((t) => `<li><label for="ck-${t.key}"><input type="checkbox" id="ck-${t.key}" data-ck="${t.key}" ${plan.checks[t.key] ? "checked" : ""}><span>${t.html}</span></label></li>`).join("")}</ul></div>
       <div class="card"><h3>Verify before you go</h3>
-        <p class="small">${plan.days.flatMap((d) => d.blocks).filter((b) => BY_ID[b.ref] && !(BY_ID[b.ref].verified && BY_ID[b.ref].verified.date)).length} stops in this plan have unverified hours or access details. Check each official link a day or two ahead.</p>
+        <p class="small">${plan.days.flatMap((d) => d.blocks).filter((b) => BY_ID[b.ref] && !isVerified(BY_ID[b.ref])).length} stops in this plan have unverified hours or access details. Check each official link a day or two ahead.</p>
         <ul class="linklist small"><li><a href="${D.sources.beachSafety.url}" target="_blank" rel="noopener">Ocean conditions</a></li><li><a href="${D.sources.nwsHfo.url}" target="_blank" rel="noopener">Weather alerts</a></li><li><a href="${D.sources.stateParks.url}" target="_blank" rel="noopener">State park closures</a></li></ul></div>
       <div class="card"><h3>Add saved places</h3>${savedNotInPlan(plan)}</div>`;
     wirePlan();

@@ -31,7 +31,12 @@ Saved places and plans live in `localStorage` (anonymous, local-first). Share li
 
 All content lives in `js/data.js`.
 
-- **Editorial descriptions are drafts.** Every listing has `verified: null`, so the UI shows "Not yet verified"
+- **Food listings were checked against official sites on 2026-11-22** (see `HWP.foodChecks` at the end of
+  `js/data.js`). 20 are confirmed; 3 are marked "Couldn't confirm it's open" (Hāliʻimaile General Store, Bar Acuda,
+  Lānaʻi City Grille) and Punaluʻu Bake Shop is marked temporarily closed. The planner skips those four. Seven remain
+  unverified: no official site (T. Komoda, Hamura Saimin), or the site blocked automated access or was unreachable
+  (Da Poke Shack, Blue Ginger Café, Big Island Candies, Giovanni's, Ululani's).
+- **Beach and sight listings are drafts.** They have `verified: null`, so the UI shows "Not yet verified"
   and routes people to the official source. When a listing is checked, add
   `verified: { date: "YYYY-MM-DD", by: "reviewer" }` and the card will show the verification date.
 - Street addresses and phone numbers are intentionally omitted until verified; cards link to a map search and the official site.
