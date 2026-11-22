@@ -726,3 +726,9 @@ h3 { font-size: 1.35rem; }
 .food-near li { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .6rem; align-items: center; font-size: .92rem; }
 .fn-name a { font-weight: 700; }
 @media (max-width: 600px) { .food-near li { grid-template-columns: minmax(0, 1fr) auto; } .food-near .pines { display: none; } }
+.badge-veg { background: var(--leaf-soft); color: var(--leaf); border-color: transparent; }
+.badge-veg::before { content: ""; display: inline-block; width: .75em; height: .75em; margin-right: .25em; vertical-align: -.05em; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 20.5C3 11 9 4.5 21 3c-.6 11.5-7 17.6-17.5 17.5z'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3.5 20.5C3 11 9 4.5 21 3c-.6 11.5-7 17.6-17.5 17.5z'/%3E%3C/svg%3E") center / contain no-repeat; }
+.plan-veg { display: flex; gap: .4rem; align-items: center; margin-top: .6rem; font-weight: 600; }
+.plan-veg input { accent-color: var(--accent); width: 18px; height: 18px; }
