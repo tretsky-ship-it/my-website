@@ -9,7 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap">
-<link rel="stylesheet" href="css/styles.css?v=20261122f">
+<link rel="stylesheet" href="css/styles.css?v=20261122g">
 <script>try{var t=localStorage.getItem("hwp:theme");if(t==='"dark"')document.documentElement.setAttribute("data-theme","dark");}catch(e){}</script>
 </head>
 <body>
@@ -77,16 +77,29 @@
       </header>
       <h3 class="dish-head">Signature dishes, and where to try them</h3>
       <div class="dish-strip" id="foodDishes"></div>
-      <h3 class="dish-head">Our picks by island</h3>
-      <div class="food-controls">
-        <div class="seg" role="group" aria-label="Group food by">
-          <button type="button" class="seg-btn" data-group="type" aria-pressed="true">By type of food</button>
-          <button type="button" class="seg-btn" data-group="area" aria-pressed="false">By area</button>
+      <h3 class="dish-head" id="finder-title">Find a place to eat</h3>
+      <div class="finder card" id="foodFinder" role="search" aria-labelledby="finder-title">
+        <div class="finder-row"><span class="finder-label" id="ffTypeL">What are you craving?</span><div class="chips" id="ffType" role="radiogroup" aria-labelledby="ffTypeL"></div></div>
+        <div class="finder-row"><span class="finder-label" id="ffIslandL">Which island?</span><div class="chips" id="ffIsland" role="radiogroup" aria-labelledby="ffIslandL"></div></div>
+        <div class="finder-inline">
+          <div class="field"><label for="ffArea">Area</label><select id="ffArea"></select></div>
+          <div class="field"><label for="ffMeal">Meal</label><select id="ffMeal"><option value="">Any meal</option><option>Breakfast</option><option>Lunch</option><option>Dinner</option><option>Snack</option><option>Drinks</option></select></div>
+          <div class="field"><label for="ffPrice">Price</label><select id="ffPrice"><option value="">Any price</option><option value="1">$ only</option><option value="2">$$ or less</option><option value="3">$$$ or less</option></select></div>
+          <div class="field"><label for="ffSort">Sort by</label><select id="ffSort"><option value="pop">Most pineapples</option><option value="price">Price, low to high</option><option value="name">Name</option></select></div>
+          <label class="check" for="ffPopular"><input type="checkbox" id="ffPopular"> Most popular only</label>
+          <label class="check" for="foodOpenOnly"><input type="checkbox" id="foodOpenOnly" checked> Hide closed or unconfirmed</label>
         </div>
-        <div class="chips" role="group" aria-label="Island" id="foodIslands"></div>
-        <label class="check" for="foodOpenOnly"><input type="checkbox" id="foodOpenOnly" checked> Hide closed or unconfirmed</label>
       </div>
-      <div class="food-groups" id="foodGroups"></div>
+      <div class="finder-bar">
+        <p id="ffCount" class="result-count" aria-live="polite"></p>
+        <div class="seg" role="group" aria-label="View results as">
+          <button type="button" class="seg-btn" data-view="list" aria-pressed="true">Ranked list</button>
+          <button type="button" class="seg-btn" data-view="type" aria-pressed="false">By type</button>
+          <button type="button" class="seg-btn" data-view="area" aria-pressed="false">By area</button>
+        </div>
+      </div>
+      <p class="pine-legend small" id="pineLegend"></p>
+      <div id="foodResults"></div>
       <p class="small muted food-note">Ranking combines our must-try picks with how many of the guides we read recommend a place (shown as “In 3 guides”). It isn't a star rating. Places checked against their official websites on 2026-11-22 show a <span class="badge badge-ok">Checked</span> label; newly added places haven't been checked yet.</p>
     </div>
   </section>
@@ -371,8 +384,8 @@
   </form>
 </dialog>
 
-<script src="js/data.js?v=20261122f"></script>
-<script src="js/food-extra.js?v=20261122f"></script>
-<script src="js/app.js?v=20261122f"></script>
+<script src="js/data.js?v=20261122g"></script>
+<script src="js/food-extra.js?v=20261122g"></script>
+<script src="js/app.js?v=20261122g"></script>
 </body>
 </html>
