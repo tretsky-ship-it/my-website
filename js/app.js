@@ -1366,6 +1366,18 @@
       else if (t.dataset.share) copyText(location.href.split("#")[0] + "#" + t.dataset.share).then((ok) => flash(ok ? "Link to this place copied." : "Couldn't copy the link."));
       else if (t.dataset.report) openReport(t.dataset.report);
     });
+    const MOON = "M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z";
+    const SUN = "M12 7a5 5 0 1 1 0 10 5 5 0 0 1 0-10zm0-6 1.2 3.2h-2.4zm0 22-1.2-3.2h2.4zM1 12l3.2-1.2v2.4zm22 0-3.2 1.2v-2.4zM4.2 4.2l3.1 1.4-1.7 1.7zm15.6 15.6-3.1-1.4 1.7-1.7zM4.2 19.8l1.4-3.1 1.7 1.7zM19.8 4.2l-1.4 3.1-1.7-1.7z";
+    const applyTheme = (dark) => {
+      if (dark) document.documentElement.setAttribute("data-theme", "dark"); else document.documentElement.removeAttribute("data-theme");
+      const b = $("#themeToggle");
+      b.setAttribute("aria-pressed", String(dark));
+      b.setAttribute("aria-label", dark ? "Switch to light mode" : "Switch to dark mode");
+      $("#themeLabel").textContent = dark ? "Light" : "Dark";
+      $("#themeIcon").setAttribute("d", dark ? SUN : MOON);
+    };
+    applyTheme(store.get("theme", "light") === "dark");
+    $("#themeToggle").onclick = () => { const dark = document.documentElement.getAttribute("data-theme") !== "dark"; store.set("theme", dark ? "dark" : "light"); applyTheme(dark); };
     $("#tripPill").onclick = () => { $("#tripDrawer").showModal(); renderTripSummary(); };
     $("#closeDrawer").onclick = () => $("#tripDrawer").close();
     $("#tripDrawer").addEventListener("click", (e) => { if (e.target === $("#tripDrawer")) $("#tripDrawer").close(); });
