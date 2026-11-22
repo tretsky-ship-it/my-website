@@ -38,9 +38,14 @@
   --focus: #e0761c;
   --shadow: 0 1px 2px rgba(13, 43, 62, .06), 0 4px 16px rgba(13, 43, 62, .07);
 
-  --font-display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
-  --font-body: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
-  --font-mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+  --font-poster: "Shrikhand", "Cooper Black", Georgia, serif;          /* travel-poster display */
+  --font-display: "Big Shoulders Display", "Arial Narrow", "Roboto Condensed", sans-serif; /* condensed signage */
+  --font-body: "Atkinson Hyperlegible", Verdana, "Segoe UI", sans-serif;
+  --font-mono: "Big Shoulders Display", "Arial Narrow", sans-serif;     /* labels, dates, prices */
+  --ridge-1: #2f8f55;
+  --ridge-2: #1d6b3c;
+  --postcard-shadow: #b9d3d9;
+  --btn-shadow: #07527e;
 
   --step--1: .875rem;
   --step-0: 1.0625rem;
@@ -60,7 +65,7 @@
     --lagoon: #3fd0d6; --leaf: #6dd08f; --leaf-soft: #12351f; --sun: #ffd35c; --sun-soft: #3a300c; --sun-ink: #ffe08a;
     --lehua: #ff8a7f; --ok: #6dd08f; --ok-bg: #12351f; --warn: #f2c766; --warn-bg: #3a2d0f; --bad: #ff8a8f; --bad-bg: #3d1719;
     --hero-top: #062e4f; --hero-mid: #08547a; --hero-low: #0b7480; --hero-bg: #062e4f; --hero-ink: #ffffff; --hero-muted: #c4e4ee; --hero-accent: #ffd35c;
-    --footer-bg: #0a2a1b; --footer-ink: #bfdcc8; --focus: #ffb347;
+    --footer-bg: #0a2a1b; --footer-ink: #bfdcc8; --focus: #ffb347; --ridge-1: #1c5a35; --ridge-2: #123f25; --postcard-shadow: #021018; --btn-shadow: #021018;
     --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
     color-scheme: dark;
   }
@@ -71,7 +76,7 @@
   --lagoon: #3fd0d6; --leaf: #6dd08f; --leaf-soft: #12351f; --sun: #ffd35c; --sun-soft: #3a300c; --sun-ink: #ffe08a;
   --lehua: #ff8a7f; --ok: #6dd08f; --ok-bg: #12351f; --warn: #f2c766; --warn-bg: #3a2d0f; --bad: #ff8a8f; --bad-bg: #3d1719;
   --hero-top: #062e4f; --hero-mid: #08547a; --hero-low: #0b7480; --hero-bg: #062e4f; --hero-ink: #ffffff; --hero-muted: #c4e4ee; --hero-accent: #ffd35c;
-  --footer-bg: #0a2a1b; --footer-ink: #bfdcc8; --focus: #ffb347;
+  --footer-bg: #0a2a1b; --footer-ink: #bfdcc8; --focus: #ffb347; --ridge-1: #1c5a35; --ridge-2: #123f25; --postcard-shadow: #021018; --btn-shadow: #021018;
   --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
   color-scheme: dark;
 }
@@ -194,9 +199,9 @@ fieldset { border: 0; padding: 0; margin: 0; min-width: 0; }
 /* ---------- hero */
 .hero {
   position: relative; color: var(--hero-ink);
-  padding-block: clamp(2rem, 5vw, 3.5rem) calc(2rem + 56px);
+  padding-block: clamp(2rem, 5vw, 3.5rem) calc(2rem + 150px);
   background:
-    radial-gradient(circle at 86% 22%, rgba(255, 224, 130, .95) 0 46px, rgba(255, 211, 92, .35) 47px, transparent 190px),
+    radial-gradient(circle at 74% calc(100% - 175px), rgba(255, 224, 130, .97) 0 62px, rgba(255, 211, 92, .4) 63px, transparent 230px),
     linear-gradient(172deg, var(--hero-top) 0%, var(--hero-mid) 55%, var(--hero-low) 100%);
 }
 .hero::after {
@@ -496,3 +501,85 @@ dialog::backdrop { background: rgba(5, 15, 18, .55); }
 .badge-star { background: var(--sun-soft); color: var(--sun-ink); border-color: transparent; }
 .food-note { margin-top: 1rem; max-width: 80ch; }
 @media (max-width: 480px) { .food-row { grid-template-columns: 1fr; } .fr-side { justify-content: flex-start; } }
+
+/* =====================================================================
+   Identity layer: vintage island travel poster.
+   Poster display face for big headings, condensed signage face for labels
+   and card titles, postcard cards with hard offset shadows, green ridges.
+   ===================================================================== */
+body { font-family: var(--font-body); font-size: 1.04rem; }
+h1, h2 { font-family: var(--font-poster); font-weight: 400; letter-spacing: .005em; line-height: 1.08; }
+h3, h4 { font-family: var(--font-display); font-weight: 800; letter-spacing: .01em; line-height: 1.05; }
+h3 { font-size: 1.45rem; }
+h4 { font-size: 1.12rem; }
+.section-head h2 {
+  font-size: clamp(2rem, 4.6vw, 2.9rem);
+  text-decoration: underline wavy var(--sun); text-decoration-thickness: 3px;
+  text-underline-offset: .26em; text-decoration-skip-ink: none;
+  padding-bottom: .2rem;
+}
+.hero h1 { font-size: clamp(2.6rem, 6.5vw, 4.6rem); line-height: 1.02; text-shadow: 3px 3px 0 rgba(4, 30, 52, .35); }
+.sunword { color: var(--hero-accent); }
+.brand { font-family: var(--font-poster); font-weight: 400; font-size: 1.15rem; letter-spacing: .01em; }
+
+.eyebrow {
+  font: 800 .95rem/1.2 var(--font-display); letter-spacing: .16em; color: var(--leaf);
+  display: inline-flex; align-items: center; gap: .5rem;
+}
+.eyebrow::before {
+  content: ""; width: 26px; height: 10px; flex: none; background: currentColor;
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 10'%3E%3Cpath d='M1 6c3-5 6-5 8 0s5 5 8 0 5-5 8 0' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 26 10'%3E%3Cpath d='M1 6c3-5 6-5 8 0s5 5 8 0 5-5 8 0' fill='none' stroke='black' stroke-width='2.4' stroke-linecap='round'/%3E%3C/svg%3E") center / contain no-repeat;
+}
+.hero .eyebrow { color: var(--hero-accent); }
+
+.mainnav a { font: 700 1.05rem var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.trip-pill { border-radius: 4px; box-shadow: 3px 3px 0 var(--postcard-shadow); }
+.trip-pill-label { font: 800 1rem var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
+
+/* postcards */
+.card { border-radius: 3px; border: 2px solid var(--line); box-shadow: 6px 6px 0 var(--postcard-shadow); }
+.food-group { border-top-width: 6px; }
+.quiz.card { box-shadow: 8px 8px 0 rgba(4, 30, 52, .35); border-color: transparent; }
+
+/* buttons: chunky, sign-painted */
+.btn {
+  border-radius: 3px; font: 800 1.02rem/1.1 var(--font-display); letter-spacing: .06em; text-transform: uppercase;
+  box-shadow: 3px 3px 0 var(--btn-shadow); padding: .6rem 1.05rem;
+}
+.btn:active { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--btn-shadow); }
+.btn-ghost { box-shadow: none; }
+.btn-sm { font-size: .92rem; padding: .38rem .7rem; }
+.hero .btn-ghost { border-width: 2px; }
+
+/* chips, toggles, badges */
+.chip span { border-radius: 3px; font: 700 1rem var(--font-display); letter-spacing: .03em; }
+.seg { border-radius: 3px; border-width: 2px; }
+.seg-btn { font: 800 1rem var(--font-display); letter-spacing: .05em; text-transform: uppercase; }
+.badge { border-radius: 2px; font: 700 .82rem/1.25 var(--font-display); letter-spacing: .07em; padding: .12rem .45rem; }
+.badge-star::before { content: "★ "; }
+.tabs [role="tab"] { font: 800 1.1rem var(--font-display); letter-spacing: .04em; text-transform: uppercase; }
+.place-kicker, .quiz-step, .match .rank, .block .slot, .compare thead th { font-family: var(--font-display); font-weight: 800; letter-spacing: .08em; font-size: .9rem; }
+.fr-name { font-size: 1.05rem; }
+.fr-price { font: 800 1rem var(--font-display); }
+.wx-temp, .nights-out, .summary-grid b { font-family: var(--font-poster); font-weight: 400; }
+.ticks li::before { width: .55rem; height: .55rem; border-radius: 0; transform: rotate(45deg); background: var(--lagoon); }
+
+/* hero: green island ridges between the ocean and the sand wave */
+.hero::before {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 30px; height: 150px;
+  background: linear-gradient(180deg, var(--ridge-1), var(--ridge-2));
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 150' preserveAspectRatio='none'%3E%3Cpath d='M0 150V96c60-8 110-40 170-62 40-15 70 6 105 22 45 20 80 10 120-18 50-35 95-30 140 4 30 22 60 34 100 26 70-14 120-58 190-52 60 5 95 46 150 52 50 6 90-30 140-34 60-5 110 30 160 40 30 6 50 0 65-6c60-20 110-30 165-24V150Z'/%3E%3C/svg%3E") bottom / 100% 100% no-repeat;
+          mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 150' preserveAspectRatio='none'%3E%3Cpath d='M0 150V96c60-8 110-40 170-62 40-15 70 6 105 22 45 20 80 10 120-18 50-35 95-30 140 4 30 22 60 34 100 26 70-14 120-58 190-52 60 5 95 46 150 52 50 6 90-30 140-34 60-5 110 30 160 40 30 6 50 0 65-6c60-20 110-30 165-24V150Z'/%3E%3C/svg%3E") bottom / 100% 100% no-repeat;
+}
+.footer { border-top: 6px solid var(--sun); }
+
+@media (max-width: 760px) {
+  .hero {
+    background:
+      radial-gradient(circle at 92% 3%, rgba(255, 224, 130, .9) 0 30px, rgba(255, 211, 92, .3) 31px, transparent 110px),
+      linear-gradient(172deg, var(--hero-top) 0%, var(--hero-mid) 55%, var(--hero-low) 100%);
+    padding-bottom: calc(2rem + 110px);
+  }
+  .hero::before { height: 110px; }
+}
