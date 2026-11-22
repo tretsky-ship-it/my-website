@@ -61,28 +61,7 @@
   --gutter-r: max(16px, env(safe-area-inset-right, 0px));
   color-scheme: light;
 }
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --bg: #0b1c1c; --band: #0f2a22; --surface: #112a28; --surface-2: #173632; --ink: #e4f3f8; --muted: #9fbccb;
-    --line: #24463f; --accent: #7ad99a; --accent-strong: #a6ebbb; --accent-ink: #062414; --accent-soft: #163a26;
-    --lagoon: #3fd0d6; --leaf: #6dd08f; --leaf-soft: #12351f; --sun: #ffd35c; --sun-soft: #3a300c; --sun-ink: #ffe08a;
-    --lehua: #ff8a7f; --ok: #6dd08f; --ok-bg: #12351f; --warn: #f2c766; --warn-bg: #3a2d0f; --bad: #ff8a8f; --bad-bg: #3d1719;
-    --hero-top: #0e3a44; --hero-mid: #165a5a; --hero-low: #2a6b45; --hero-bg: #0e3a44; --hero-ink: #ffffff; --hero-muted: #d2ece6; --hero-accent: #ffd35c; --hero-line: rgba(255,255,255,.4); --hero-shadow: rgba(4,30,30,.4); --sunword-hl: transparent;
-    --footer-bg: #0a2a1b; --footer-ink: #bfdcc8; --focus: #ffb347; --ridge-1: #1c5a35; --ridge-2: #123f25; --postcard-shadow: #021018; --btn-shadow: #021018;
-    --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
-    color-scheme: dark;
-  }
-}
-:root[data-theme="dark"] {
-  --bg: #0b1c1c; --band: #0f2a22; --surface: #112a28; --surface-2: #173632; --ink: #e4f3f8; --muted: #9fbccb;
-  --line: #24463f; --accent: #7ad99a; --accent-strong: #a6ebbb; --accent-ink: #062414; --accent-soft: #163a26;
-  --lagoon: #3fd0d6; --leaf: #6dd08f; --leaf-soft: #12351f; --sun: #ffd35c; --sun-soft: #3a300c; --sun-ink: #ffe08a;
-  --lehua: #ff8a7f; --ok: #6dd08f; --ok-bg: #12351f; --warn: #f2c766; --warn-bg: #3a2d0f; --bad: #ff8a8f; --bad-bg: #3d1719;
-  --hero-top: #0e3a44; --hero-mid: #165a5a; --hero-low: #2a6b45; --hero-bg: #0e3a44; --hero-ink: #ffffff; --hero-muted: #d2ece6; --hero-accent: #ffd35c; --hero-line: rgba(255,255,255,.4); --hero-shadow: rgba(4,30,30,.4); --sunword-hl: transparent;
-  --footer-bg: #0a2a1b; --footer-ink: #bfdcc8; --focus: #ffb347; --ridge-1: #1c5a35; --ridge-2: #123f25; --postcard-shadow: #021018; --btn-shadow: #021018;
-  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
-  color-scheme: dark;
-}
+/* Single light-blue theme by design: the page keeps its daytime palette even when the device uses dark mode. */
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 76px; }
