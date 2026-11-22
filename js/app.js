@@ -599,7 +599,7 @@
       links.push(`<a class="btn btn-ghost btn-sm" href="${mapUrl(p)}" target="_blank" rel="noopener">Map ↗</a>`);
       links.push(`<a class="btn btn-ghost btn-sm" href="${yelpUrl(p)}" target="_blank" rel="noopener" title="Yelp ratings are separate from our editorial pick">Find on Yelp ↗</a>`);
       const atPhoto = Object.values(D.photos || {}).find((ph) => ph.at === p.id);
-      extra = (atPhoto ? `<figure class="place-photo"><img src="${atPhoto.src}" alt="${esc(atPhoto.alt)}" width="720" height="540" loading="lazy"><figcaption class="small muted">${photoCredit(atPhoto)}</figcaption></figure>` : "") +
+      extra = `<p class="card-pines">${pineHTML(p)}${popBadges(p)}</p>` + (atPhoto ? `<figure class="place-photo"><img src="${atPhoto.src}" alt="${esc(atPhoto.alt)}" width="720" height="540" loading="lazy"><figcaption class="small muted">${photoCredit(atPhoto)}</figcaption></figure>` : "") +
         ((p.sources || []).length ? `<p class="small"><b>Recommended in:</b> ${p.sources.map((k) => `<a href="${D.foodSources[k].url}" target="_blank" rel="noopener">${esc(D.foodSources[k].label)}</a>`).join("; ")}</p>` : "") +
         `<p class="small muted">Yelp search link only; we haven't matched a verified listing yet. Ratings there are not part of our recommendation.</p>`;
     } else if (p.kind2 === "beaches") {
@@ -739,7 +739,83 @@
   }
 
   /* ========================================================== FOOD LIST */
-  const foodState = { group: "type", island: "", openOnly: true };
+  const foodState = { view: "list", island: "", openOnly: true, type: "", area: "", meal: "", price: "", sort: "pop", popularOnly: false, limit: 30 };
+  /* Popularity = how many guides and readers' polls recommend a place (no star ratings available). */
+  const POLLS = new Set(["hm2026maui", "hm2022maui", "hmKauaiPlate", "hmKauaiShave", "hm2026all", "hmKauaiTrucks"]);
+  const isReadersPick = (p) => (p.sources || []).some((k) => POLLS.has(k));
+  const popScore = (p) => { const s = p.sources || []; const pl = D.foodPlacement[p.id] || {}; return s.length * 2 + s.filter((k) => POLLS.has(k)).length * 2 + (pl.star ? 3 : 0) + (isVerified(p) ? 1 : 0); };
+  /* Pineapple score (our rating, 2–5): every listed place is recommended by at least one source. */
+  const pineapples = (p) => { const s = popScore(p); return s >= 11 ? 5 : (p.popular || s >= 7) ? 4 : s >= 4 ? 3 : 2; };
+  const PINE_SVG = `<svg viewBox="0 0 16 22" aria-hidden="true"><path d="M8 0.6l1 3.2 2.3-2.2-.7 3.3 2.6-.6-2.6 2.5H5.4L2.8 4.3l2.6.6-.7-3.3L7 3.8z" fill="#3a9a4a"/><ellipse cx="8" cy="13.6" rx="5.2" ry="7" fill="#f4b41a"/><path d="M4 9.5l8 8M3.3 13.4l6.4 6.4M5.2 8l7.4 7.4M12 9.5l-8 8M12.7 13.4l-6.4 6.4M10.8 8L3.4 15.4" stroke="#c7860a" stroke-width=".8" fill="none"/></svg>`;
+  const pineHTML = (p) => {
+    const n = pineapples(p);
+    return `<span class="pines" role="img" aria-label="${n} out of 5 pineapples" title="${n} of 5 pineapples: our score from guides and readers' polls">${[1, 2, 3, 4, 5].map((i) => `<span class="pine${i <= n ? "" : " off"}">${PINE_SVG}</span>`).join("")}</span>`;
+  };
+  /* Expandable detail card for a food place. Photos are dish photos matched by what the place is known for. */
+  const DISH_WORDS = [["saimin", "saimin"], ["dry mein", "saimin"], ["ramen", "saimin"], ["loco", "loco-moco"], ["pancake", "loco-moco"], ["poke", "ahi-poke"], ["ahi", "ahi-poke"], ["sushi", "ahi-poke"], ["shrimp", "garlic-shrimp"], ["laulau", "laulau"], ["lau lau", "laulau"], ["kalua", "laulau"], ["musubi", "spam-musubi"], ["shave", "shave-ice"], ["haupia", "haupia"], ["pie", "haupia"], ["poi", "poi"], ["taro", "poi"], ["plate", "plate-lunch"], ["katsu", "plate-lunch"]];
+  const TYPE_PHOTOS = { hawaiian: ["laulau", "poi"], local: ["plate-lunch", "loco-moco"], seafood: ["ahi-poke", "garlic-shrimp"], sweets: ["haupia"], shaveice: ["shave-ice"], coffee: ["loco-moco"], trucks: ["plate-lunch", "spam-musubi"], markets: ["poi"], special: ["ahi-poke", "laulau"], bars: ["ahi-poke", "spam-musubi"] };
+  function photosFor(p) {
+    const out = [];
+    const add = (k) => { if (D.photos[k] && !out.includes(k)) out.push(k); };
+    Object.entries(D.photos).forEach(([k, ph]) => { if (ph.at === p.id) add(k); });
+    const text = `${p.signature} ${p.why} ${p.cuisine}`.toLowerCase();
+    DISH_WORDS.forEach(([w, k]) => { if (text.includes(w)) add(k); });
+    (TYPE_PHOTOS[(D.foodPlacement[p.id] || {}).type] || []).forEach(add);
+    return out.slice(0, 4);
+  }
+  function foodDetail(p) {
+    const ph = photosFor(p);
+    const pl = D.foodPlacement[p.id] || {};
+    const saved = state.saved.has(p.id);
+    const facts = [["What to order", p.signature], ["Type", `${typeLabel(p)} · ${p.cuisine}`], ["Where", `${pl.region}, ${ISL[p.island].name}`], ["Address", p.address], ["Phone", p.phone],
+      ["Hours", p.hours ? `${p.hours} (from the official site; subject to change)` : "Check before you go"], ["Meals", p.meals.join(", ")], ["Price", `${priceLabel(p.price)}, ${priceBasis(p.price)} (estimate)`], ["Reservations", p.reservations], ["Setting", p.setting]].filter((f) => f[1]);
+    return `<div class="fd-inner">
+      ${ph.length ? `<div class="fd-carousel">
+        <div class="fd-track" tabindex="0" aria-label="Photos">${ph.map((k) => { const x = D.photos[k]; return `<figure><img src="${x.src}" alt="${esc(x.alt)}" width="720" height="540" loading="lazy"><figcaption>${x.at === p.id ? "Photo taken here" : "Dishes like this, not necessarily from here"} · ${photoCredit(x)}</figcaption></figure>`; }).join("")}</div>
+        ${ph.length > 1 ? `<button type="button" class="fd-nav prev" aria-label="Previous photo">‹</button><button type="button" class="fd-nav next" aria-label="Next photo">›</button>` : ""}
+      </div>` : ""}
+      <div class="fd-info">
+        <p class="fd-score">${pineHTML(p)} <b>${pineapples(p)} of 5</b>${popBadges(p)}</p>
+        ${p.status === "temp-closed" ? `<div class="callout bad"><strong>Temporarily closed</strong>${esc(p.note || "")}</div>` : p.status === "unconfirmed" ? `<div class="callout warn"><strong>Status unconfirmed</strong>${esc(p.note || "")}</div>` : p.note ? `<p class="small muted">${esc(p.note)}</p>` : ""}
+        <p>${esc(p.why)}</p>
+        <dl class="facts">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${esc(v)}</dd>`).join("")}</dl>
+        ${(p.sources || []).length ? `<p class="small"><b>Recommended in:</b> ${p.sources.map((k) => `<a href="${D.foodSources[k].url}" target="_blank" rel="noopener">${esc(D.foodSources[k].label)}</a>`).join("; ")}</p>` : ""}
+        <p class="small muted">${isVerified(p) ? `Details checked on the official site ${esc(p.verified.date)}.` : "Not yet checked against an official website. Confirm hours before you go."}</p>
+        <div class="fd-actions">
+          ${p.web ? `<a class="btn btn-sm" href="${p.web}" target="_blank" rel="noopener">${esc(p.webLabel || "Official website")} ↗</a>` : ""}
+          <a class="btn btn-ghost btn-sm" href="${mapUrl(p)}" target="_blank" rel="noopener">Map ↗</a>
+          <a class="btn btn-ghost btn-sm" href="${yelpUrl(p)}" target="_blank" rel="noopener">Find on Yelp ↗</a>
+          <button type="button" class="btn btn-ghost btn-sm save-btn" data-save="${p.id}" aria-pressed="${saved}">${saved ? "Saved" : "Save"}</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-addplan="${p.id}">Add to trip</button>
+          <button type="button" class="btn btn-ghost btn-sm" data-report="${esc(p.name)}">Report an update</button>
+        </div>
+      </div>
+    </div>`;
+  }
+  function wireFoodToggles(root) {
+    $$("[data-fd]", root).forEach((b) => (b.onclick = (e) => {
+      e.preventDefault();
+      const id = b.dataset.fd, panel = document.getElementById("fd-" + id + "-" + b.dataset.k);
+      const open = b.getAttribute("aria-expanded") !== "true";
+      b.setAttribute("aria-expanded", String(open));
+      b.closest("li").classList.toggle("is-open", open);
+      if (open) {
+        panel.innerHTML = foodDetail(BY_ID[id]); panel.hidden = false;
+        const track = $(".fd-track", panel);
+        $$(".fd-nav", panel).forEach((n) => (n.onclick = () => track.scrollBy({ left: (n.classList.contains("next") ? 1 : -1) * track.clientWidth, behavior: "smooth" })));
+      } else { panel.hidden = true; panel.innerHTML = ""; }
+    }));
+  }
+  let popularMarked = false;
+  function markPopular() {
+    if (popularMarked) return; popularMarked = true;
+    D.islands.forEach((i) => {
+      const list = D.food.filter((p) => p.island === i.id && D.foodPlacement[p.id] && (!p.status || p.status === "ok")).sort((a, b) => popScore(b) - popScore(a));
+      const n = Math.max(3, Math.ceil(list.length * 0.15));
+      list.slice(0, n).forEach((p) => { if (popScore(p) >= 5) p.popular = true; });
+    });
+  }
+  const typeLabel = (p) => ((D.foodTypes.find((t) => t.id === (D.foodPlacement[p.id] || {}).type) || {}).label || p.kind);
   const photoCredit = (ph) => `Photo: ${ph.page ? `<a href="${ph.page}" target="_blank" rel="noopener">${esc(ph.author)}</a>` : esc(ph.author)}, ${ph.licenseUrl ? `<a href="${ph.licenseUrl}" target="_blank" rel="noopener">${esc(ph.license)}</a>` : esc(ph.license)}`;
   function renderDishes() {
     $("#foodDishes").innerHTML = D.dishes.map((d) => {
@@ -756,29 +832,92 @@
   }
   function renderFoodList() {
     renderDishes();
-    $("#foodIslands").innerHTML = [["", "All islands"], ...D.islands.map((i) => [i.id, i.name])].map(([id, n]) =>
-      `<label class="chip" for="fi-${id || "all"}"><input type="radio" name="foodIsl" id="fi-${id || "all"}" value="${id}" ${foodState.island === id ? "checked" : ""}><span>${esc(n)}</span></label>`).join("");
-    $$("#foodIslands input").forEach((i) => (i.onchange = () => { foodState.island = i.value; drawFoodGroups(); }));
-    $$(".seg-btn").forEach((b) => (b.onclick = () => { foodState.group = b.dataset.group; $$(".seg-btn").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); drawFoodGroups(); }));
-    $("#foodOpenOnly").onchange = (e) => { foodState.openOnly = e.target.checked; drawFoodGroups(); };
-    drawFoodGroups();
+    markPopular();
+    $("#pineLegend").innerHTML = `<span class="pines">${[1, 2, 3, 4, 5].map(() => `<span class="pine">${PINE_SVG}</span>`).join("")}</span> <b>Pineapple score</b> is our rating from how many food guides and readers' polls recommend a place, plus our must-try picks. It isn't a review-site star rating. 5 = the most widely recommended, 4 = very popular, 3 = recommended by several sources, 2 = recommended by one guide.`;
+    const radio = (name, opts, cur) => opts.map(([v, l]) => `<label class="chip" for="${name}-${v || "all"}"><input type="radio" name="${name}" id="${name}-${v || "all"}" value="${v}" ${cur === v ? "checked" : ""}><span>${esc(l)}</span></label>`).join("");
+    $("#ffType").innerHTML = radio("fft", [["", "Anything"], ...D.foodTypes.map((t) => [t.id, t.label])], foodState.type);
+    $("#ffIsland").innerHTML = radio("ffi", [["", "All islands"], ...D.islands.map((i) => [i.id, i.name])], foodState.island);
+    $$("#ffType input").forEach((i) => (i.onchange = () => { foodState.type = i.value; foodState.limit = 30; drawFood(); }));
+    $$("#ffIsland input").forEach((i) => (i.onchange = () => { foodState.island = i.value; foodState.area = ""; foodState.limit = 30; fillAreas(); drawFood(); }));
+    [["ffArea", "area"], ["ffMeal", "meal"], ["ffPrice", "price"], ["ffSort", "sort"]].forEach(([id, k]) => ($("#" + id).onchange = (e) => { foodState[k] = e.target.value; foodState.limit = 30; drawFood(); }));
+    $("#ffPopular").onchange = (e) => { foodState.popularOnly = e.target.checked; drawFood(); };
+    $("#foodOpenOnly").onchange = (e) => { foodState.openOnly = e.target.checked; drawFood(); };
+    $$(".seg-btn[data-view]").forEach((b) => (b.onclick = () => { foodState.view = b.dataset.view; $$(".seg-btn[data-view]").forEach((x) => x.setAttribute("aria-pressed", String(x === b))); drawFood(); }));
+    fillAreas();
+    drawFood();
+  }
+  function fillAreas() {
+    const regions = [...new Set(D.food.filter((p) => D.foodPlacement[p.id] && (!foodState.island || p.island === foodState.island)).map((p) => (foodState.island ? "" : ISL[p.island].name + ": ") + D.foodPlacement[p.id].region))];
+    $("#ffArea").innerHTML = `<option value="">Anywhere</option>` + regions.map((r) => `<option value="${esc(r.replace(/^.*?: /, ""))}">${esc(r)}</option>`).join("");
+    $("#ffArea").value = foodState.area;
+  }
+  function foodFiltered() {
+    const f = foodState;
+    return D.food.filter((p) => {
+      const pl = D.foodPlacement[p.id]; if (!pl) return false;
+      if (f.openOnly && p.status && p.status !== "ok") return false;
+      if (f.island && p.island !== f.island) return false;
+      if (f.type && pl.type !== f.type) return false;
+      if (f.area && pl.region !== f.area) return false;
+      if (f.meal && !p.meals.includes(f.meal)) return false;
+      if (f.price && p.price > +f.price) return false;
+      if (f.popularOnly && !p.popular) return false;
+      return true;
+    });
+  }
+  function popBadges(p) {
+    return `${p.popular ? ` <span class="badge badge-hot" title="Among the most-recommended places on ${esc(ISL[p.island].name)}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8.6 1c.4 2.4-1 3.6-2.1 5C5.6 7.1 5 8.2 5 9.6 5 11.5 6.4 13 8 13s3-1.4 3-3.2c0-1-.4-1.8-1-2.5.9.2 1.7.9 2.2 1.8C12.7 7 12 3.6 8.6 1z" fill="currentColor"/></svg>Most popular</span>` : ""}${isReadersPick(p) ? ` <span class="badge badge-poll">Readers' pick</span>` : ""}`;
+  }
+  function drawFood() {
+    const list = foodFiltered();
+    const f = foodState;
+    $("#ffCount").textContent = `${list.length} ${list.length === 1 ? "place" : "places"}${f.island ? " on " + ISL[f.island].name : ""}`;
+    if (f.view === "list") {
+      const sorted = [...list].sort((a, b) => f.sort === "price" ? a.price - b.price || popScore(b) - popScore(a) : f.sort === "name" ? a.name.localeCompare(b.name) : popScore(b) - popScore(a) || a.name.localeCompare(b.name));
+      const shown = sorted.slice(0, f.limit);
+      $("#foodResults").innerHTML = list.length ? `<ol class="food-list card">${shown.map((p, i) => {
+        const pl = D.foodPlacement[p.id]; const n = (p.sources || []).length; const saved = state.saved.has(p.id); const K = "l";
+        return `<li class="fl-row${p.status && p.status !== "ok" ? " is-off" : ""}">
+          <span class="fl-rank" aria-hidden="true">${i + 1}</span>
+          <div class="fl-main">
+            <button type="button" class="fr-name fr-toggle" data-fd="${p.id}" data-k="${K}" aria-expanded="false" aria-controls="fd-${p.id}-${K}">${esc(p.name)}<span class="fr-caret" aria-hidden="true">▾</span></button>${popBadges(p)}${pl.star ? ` <span class="badge badge-star">Must-try</span>` : ""}
+            <span class="fr-sub">${esc(typeLabel(p))} · ${esc(pl.region)}, ${esc(ISL[p.island].name)} · ${esc(p.signature)}</span>
+            <span class="fl-meta">${n ? `In ${n} ${n === 1 ? "guide" : "guides"}` : "Editor's pick"} · ${esc(p.meals.join(", "))}${isVerified(p) ? ` · <span class="badge badge-ok">Checked</span>` : ""}${p.status === "temp-closed" ? ` · <span class="badge badge-bad">Temporarily closed</span>` : p.status === "unconfirmed" ? ` · <span class="badge badge-bad">Unconfirmed</span>` : ""}</span>
+          </div>
+          <div class="fl-side">
+            ${pineHTML(p)}
+            <span class="fr-price" title="${esc(priceBasis(p.price))}">${priceLabel(p.price)}</span>
+            ${p.web ? `<a class="fr-web" href="${p.web}" target="_blank" rel="noopener" aria-label="${esc(p.name)} official website">Site ↗</a>` : `<a class="fr-web" href="${mapUrl(p)}" target="_blank" rel="noopener" aria-label="${esc(p.name)} on the map">Map ↗</a>`}
+            <button type="button" class="btn btn-ghost btn-sm save-btn" data-save="${p.id}" aria-pressed="${saved}" aria-label="${saved ? "Remove" : "Save"} ${esc(p.name)}">${saved ? "Saved" : "Save"}</button>
+            <button type="button" class="btn btn-ghost btn-sm" data-addplan="${p.id}">Add to trip</button>
+          </div>
+          <div class="fd" id="fd-${p.id}-${K}" hidden></div>
+        </li>`;
+      }).join("")}</ol>${sorted.length > shown.length ? `<p class="center"><button type="button" class="btn" id="ffMore">Show all ${sorted.length}</button></p>` : ""}` : `<div class="empty">Nothing matches all of those. Try "Anything" or a different island.</div>`;
+      const more = $("#ffMore"); if (more) more.onclick = () => { f.limit = 1000; drawFood(); };
+      wireFoodToggles($("#foodResults"));
+    } else {
+      $("#foodResults").innerHTML = `<div class="food-groups" id="foodGroups"></div>`;
+      foodState.group = f.view;
+      drawFoodGroups(list);
+    }
   }
   function foodRow(p, groupBy) {
-    const pl = D.foodPlacement[p.id];
+    const pl = D.foodPlacement[p.id]; const K = "g";
     const status = p.status === "temp-closed" ? `<span class="badge badge-bad">Temporarily closed</span>` : p.status === "unconfirmed" ? `<span class="badge badge-bad">Unconfirmed</span>` : isVerified(p) ? `<span class="badge badge-ok">Checked</span>` : "";
     const where = groupBy === "type" ? `${pl.region}, ${ISL[p.island].name}` : (D.foodTypes.find((t) => t.id === pl.type) || {}).label;
     const n = (p.sources || []).length;
     return `<li class="food-row${p.status && p.status !== "ok" ? " is-off" : ""}">
       <div class="fr-main">
-        <a href="#${p.id}" class="fr-name" data-goto-food="${p.id}">${esc(p.name)}</a>${pl.star ? ` <span class="badge badge-star">Must-try</span>` : ""}${n ? ` <span class="badge badge-guides" title="${esc(p.sources.map((k) => D.foodSources[k].label).join("; "))}">In ${n} ${n === 1 ? "guide" : "guides"}</span>` : ""}
+        <button type="button" class="fr-name fr-toggle" data-fd="${p.id}" data-k="${K}" aria-expanded="false" aria-controls="fd-${p.id}-${K}">${esc(p.name)}<span class="fr-caret" aria-hidden="true">▾</span></button>${popBadges(p)}${pl.star ? ` <span class="badge badge-star">Must-try</span>` : ""}${n ? ` <span class="badge badge-guides" title="${esc(p.sources.map((k) => D.foodSources[k].label).join("; "))}">In ${n} ${n === 1 ? "guide" : "guides"}</span>` : ""}
         <span class="fr-sub">${esc(where)} · ${esc(p.signature)}</span>
       </div>
-      <div class="fr-side"><span class="fr-price" title="${esc(priceBasis(p.price))}">${priceLabel(p.price)}</span>${status}${p.web ? `<a class="fr-web" href="${p.web}" target="_blank" rel="noopener" aria-label="${esc(p.name)} official website">Site ↗</a>` : ""}</div>
+      <div class="fr-side">${pineHTML(p)}<span class="fr-price" title="${esc(priceBasis(p.price))}">${priceLabel(p.price)}</span>${status}${p.web ? `<a class="fr-web" href="${p.web}" target="_blank" rel="noopener" aria-label="${esc(p.name)} official website">Site ↗</a>` : ""}</div>
+      <div class="fd" id="fd-${p.id}-${K}" hidden></div>
     </li>`;
   }
-  function drawFoodGroups() {
-    const list = D.food.filter((p) => D.foodPlacement[p.id] && (!foodState.island || p.island === foodState.island) && (!foodState.openOnly || !p.status || p.status === "ok"));
-    const rank = (p) => (D.foodPlacement[p.id].star ? 0 : 100) - (p.sources || []).length * 6 + (isVerified(p) ? 0 : 4) + D.foodPlacement[p.id].rank;
+  function drawFoodGroups(list) {
+    const rank = (p) => -popScore(p) * 10 + D.foodPlacement[p.id].rank;
     let groups;
     if (foodState.group === "type") {
       const typePhoto = { hawaiian: "laulau", local: "plate-lunch", seafood: "ahi-poke", sweets: "haupia", shaveice: "shave-ice" };
@@ -796,7 +935,7 @@
         <header><h3>${esc(g.title)}</h3><p class="small muted">${esc(g.sub)} · ${g.items.length} ${g.items.length === 1 ? "pick" : "picks"}</p></header>
         <ol class="food-rows">${g.items.sort((a, b) => rank(a) - rank(b)).map((p) => foodRow(p, foodState.group)).join("")}</ol>
       </section>`).join("") : `<div class="empty">No picks match. Try all islands.</div>`;
-    $$("[data-goto-food]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); showPlace(a.dataset.gotoFood); }));
+    wireFoodToggles($("#foodGroups"));
   }
 
   /* ============================================================ HISTORY */
@@ -839,7 +978,7 @@
       start: addDays(hawaiiToday(), 60), nights: 7, flexible: false, arrival: "",
       islands: [{ id: "oahu", base: 0, nights: 7 }],
       group: "adults", pace: "balanced", budget: "mid", interests: ["food", "culture", "beaches"], diet: "", mobility: "none", car: "yes", driveTol: "medium",
-      useSaved: true, fill: true,
+      useSaved: true, fill: true, foodTypes: [], mealMode: "suggest",
     };
   }
 
@@ -870,6 +1009,14 @@
       <fieldset class="span2"><legend>Priority interests</legend><div class="chips">${D.dimensions.slice(0, 5).map((d) => `<label class="chip" for="pint-${d.id}"><input type="checkbox" id="pint-${d.id}" value="${d.id}" ${pi.interests.includes(d.id) ? "checked" : ""}><span>${esc(d.label)}</span></label>`).join("")}</div></fieldset>
       <div class="field"><label for="pCar">Rental car</label>${sel("pCar", [["yes", "Yes"], ["some", "Some days"], ["no", "No car"]], pi.car)}</div>
       <div class="field"><label for="pDrive">Driving per day</label>${sel("pDrive", [["low", "Up to 1.5 hours"], ["medium", "Up to 3 hours"], ["high", "Up to 4.5 hours"]], pi.driveTol)}</div>
+      <fieldset class="span4 plan-food"><legend>What do you like to eat? <span class="muted small">(pick any; none means everything)</span></legend>
+        <div class="chips">${D.foodTypes.map((t) => `<label class="chip" for="pft-${t.id}"><input type="checkbox" id="pft-${t.id}" value="${t.id}" ${(pi.foodTypes || []).includes(t.id) ? "checked" : ""}><span>${esc(t.label)}</span></label>`).join("")}</div>
+      </fieldset>
+      <div class="field span2"><label for="pMeals">How should meals work in your plan?</label><select id="pMeals">
+        <option value="suggest" ${(pi.mealMode || "suggest") === "suggest" ? "selected" : ""}>Pick places for me (and show what's nearby)</option>
+        <option value="nearby" ${pi.mealMode === "nearby" ? "selected" : ""}>Just show me what's nearby each day</option>
+        <option value="none" ${pi.mealMode === "none" ? "selected" : ""}>No food suggestions</option>
+      </select></div>
       <div class="field span2"><label for="pDiet">Food preferences or dietary needs</label><input type="text" id="pDiet" value="${esc(pi.diet)}" placeholder="e.g. vegetarian, no shellfish, kid-friendly"></div>
       <div class="span2" style="display:grid;gap:.3rem;align-content:end">
         <label class="check" for="pUseSaved" style="min-height:auto"><input type="checkbox" id="pUseSaved" ${pi.useSaved ? "checked" : ""}> Use my saved places first</label>
@@ -916,6 +1063,7 @@
       islands, group: $("#pGroup").value, pace: $("#pPace").value, budget: $("#pBudget").value, mobility: $("#pMob").value,
       interests: $$(".planner-form .chips input:checked").map((i) => i.value), car: $("#pCar").value, driveTol: $("#pDrive").value, diet: $("#pDiet").value.trim(),
       useSaved: $("#pUseSaved").checked, fill: $("#pFill").checked,
+      foodTypes: $$(".plan-food input:checked").map((i) => i.value), mealMode: $("#pMeals").value,
     };
   }
 
@@ -934,6 +1082,20 @@
     $("#planner").scrollIntoView({ behavior: "smooth" });
   }
 
+  const foodMatches = (p, pi) => !pi.foodTypes || !pi.foodTypes.length || pi.foodTypes.includes((D.foodPlacement[p.id] || {}).type);
+  /* "Food near today": top matching places near the day's first stop (or the base). */
+  function foodNearHTML(day, di, pi) {
+    if ((pi.mealMode || "suggest") === "none") return "";
+    const isl = ISL[day.island], base = isl.bases[day.baseIdx] || isl.bases[0];
+    const first = day.blocks.map((b) => BY_ID[b.ref]).find((p) => p && p.kind2 !== "food");
+    const near = first || base;
+    const inDay = new Set(day.blocks.map((b) => b.ref));
+    const list = D.food.filter((p) => p.island === day.island && !inDay.has(p.id) && (!p.status || p.status === "ok") && foodMatches(p, pi) && drive(near, p)[1] <= 45)
+      .sort((a, b) => (popScore(b) * 6 - drive(near, b)[0] / 4) - (popScore(a) * 6 - drive(near, a)[0] / 4)).slice(0, 5);
+    if (!list.length) return "";
+    return `<div class="food-near"><p class="fn-head"><b>Food near ${esc(first ? first.name : day.base)}</b>${pi.foodTypes && pi.foodTypes.length ? ` <span class="muted small">matching your picks</span>` : ""}</p>
+      <ul>${list.map((p) => `<li><span class="fn-name"><a href="#${p.id}" data-goto="${p.id}">${esc(p.name)}</a> <span class="muted small">${esc(typeLabel(p))} · ${priceLabel(p.price)} · ${esc(fmtRange(drive(near, p)))}</span></span>${pineHTML(p)}<button type="button" class="mini btn-sm" data-addfood="${di}|${p.id}">Add</button></li>`).join("")}</ul></div>`;
+  }
   const needsBooking = (p) => p && ((p.reservation && /reserv|required|ticket/i.test(p.reservation) && !/^None/i.test(p.reservation)) || (p.reservations && /recommend|required|essential|ahead/i.test(p.reservations)));
   const isFullDay = (p) => p && p.duration && /full day/i.test(p.duration);
   function suits(p, pi) {
@@ -972,11 +1134,12 @@
       const base = Object.assign({ island: row.id }, isl.bases[row.base] || isl.bases[0]);
       const pool = ALL.filter((p) => p.island === row.id && p.kind2 !== "food" && suits(p, pi) && (pi.fill || (pi.useSaved && state.saved.has(p.id))))
         .sort((a, b) => interestScore(b, pi) - interestScore(a, pi));
-      const foods = D.food.filter((p) => p.island === row.id && suits(p, pi) && (pi.fill || state.saved.has(p.id)))
-        .sort((a, b) => (state.saved.has(b.id) ? 1 : 0) - (state.saved.has(a.id) ? 1 : 0));
+      const foods = D.food.filter((p) => p.island === row.id && suits(p, pi) && (pi.fill || state.saved.has(p.id)) && foodMatches(p, pi));
       const usedFood = new Set();
       const pickFood = (near, meal) => {
-        const c = foods.filter((f) => !usedFood.has(f.id) && f.meals.includes(meal) && drive(near, f)[1] <= 50).sort((a, b) => (state.saved.has(b.id) - state.saved.has(a.id)) * 1000 + (drive(near, a)[0] - drive(near, b)[0]));
+        if ((pi.mealMode || "suggest") !== "suggest") return null;
+        const score = (f) => state.saved.has(f.id) * 1000 + popScore(f) * 6 - drive(near, f)[0] / 4;
+        const c = foods.filter((f) => !usedFood.has(f.id) && f.meals.includes(meal) && drive(near, f)[1] <= 50).sort((a, b) => score(b) - score(a));
         if (!c.length) return null;
         usedFood.add(c[0].id); return c[0];
       };
@@ -1145,6 +1308,7 @@
             </div>
           </li>`;
         }).join("")}</ol>
+        ${foodNearHTML(day, di, pi)}
         ${day.kind === "full" && (alt.rain || alt.low) ? `<p class="small muted" style="padding:0 1.1rem .8rem">${alt.rain ? `<b>If it rains:</b> <a href="#${alt.rain.id}" data-goto="${alt.rain.id}">${esc(alt.rain.name)}</a>. ` : ""}${alt.low ? `<b>Low-energy day:</b> <a href="#${alt.low.id}" data-goto="${alt.low.id}">${esc(alt.low.name)}</a> near your base.` : ""}</p>` : ""}
       </article>`;
     }).join("");
@@ -1215,6 +1379,12 @@
       });
     }));
     $$("[data-ck]").forEach((el) => el.addEventListener("change", () => { state.plan.checks[el.dataset.ck] = el.checked; savePlan(); }));
+    $$("[data-addfood]").forEach((el) => el.addEventListener("click", () => {
+      const [di, id] = el.dataset.addfood.split("|"); const p = BY_ID[id];
+      const slot = p.meals.includes("Dinner") ? "Evening" : p.meals.includes("Lunch") ? "Lunch" : p.meals.includes("Breakfast") ? "Morning" : "Afternoon";
+      mutate((plan) => { const b = plan.days[+di].blocks; b.push({ uid: Math.random().toString(36).slice(2, 9), slot, type: "place", ref: id, text: "", meta: "Added by you" }); b.sort((x, y) => SLOT_ORDER.indexOf(x.slot) - SLOT_ORDER.indexOf(y.slot)); });
+      flash(`Added ${p.name} to day ${+di + 1}.`);
+    }));
     $$("[data-goto]").forEach((a) => a.addEventListener("click", (e) => { e.preventDefault(); showPlace(a.dataset.goto); }));
   }
 
