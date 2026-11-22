@@ -195,10 +195,18 @@ HWP.foodAdded.push(
     why: "A red-and-white Kōloa taco truck on Hawaii Magazine's 2026 list of Kauaʻi's best food trucks, known for al pastor and blackened fish tacos.",
     signature: "Al pastor and blackened fish tacos", setting: "Food truck.", tags: ["Food truck", "Readers' pick"],
     sources: ["hmKauaiTrucks"], place: { type: "trucks", region: KAUAI.south, rank: 0 } }),
-  kauaiPlace({ id: "f-musubitruck", name: "The Musubi Truck", area: "Kapaʻa, Hanapēpē and Kōloa", lat: 22.075, lon: -159.32, kind: "Food truck", meals: ["Breakfast", "Lunch"], cuisine: "Musubi", price: 1,
-    why: "Elevated, local-style musubi from three trucks around the island, on Hawaii Magazine's 2026 best food trucks list.",
-    signature: "Spam and specialty musubi", setting: "Food trucks; check locations.", tags: ["Food truck", "Readers' pick"],
-    sources: ["hmKauaiTrucks"], place: { type: "trucks", region: KAUAI.east, rank: 1 } }),
+  kauaiPlace({ id: "f-musubitruck", name: "The Musubi Truck Kapaʻa (original)", area: "Kapaʻa", lat: 22.0775, lon: -159.3185, kind: "Food truck", meals: ["Lunch", "Dinner"], cuisine: "Musubi, poke, bentos", price: 1, web: "https://www.themusubishop.com/", webLabel: "Official website", reservations: "Walk-up; order ahead online", verified: { date: "2026-11-22", source: "themusubishop.com" }, status: "ok",
+    why: "The original truck, started in 2020 by two Kauaʻi families, serving elevated local-style musubi plus poke bowls and bentos. On Hawaii Magazine's 2026 best food trucks list.",
+    signature: "Signature musubi, poke bowl, truffle tots", setting: "Food truck in Kapaʻa town.", address: "4548 Kukui St, Kapaʻa", phone: "(808) 378-8328", tags: ["Food truck", "Readers' pick"],
+    sources: ["hmKauaiTrucks"], place: { type: "trucks", region: KAUAI.east, star: true, rank: 1 } }),
+  kauaiPlace({ id: "f-musubitruck-koloa", name: "The Musubi Truck Kōloa", area: "Kōloa (on the way to Poʻipū)", lat: 21.903, lon: -159.465, kind: "Food truck", meals: ["Lunch", "Dinner"], cuisine: "Musubi, poke, bentos", price: 1, web: "https://www.themusubishop.com/", webLabel: "Official website", reservations: "Walk-up; order ahead online", verified: { date: "2026-11-22", source: "themusubishop.com" }, status: "ok",
+    why: "The south side truck: signature musubi, fresh poke bowls, bentos and truffle tots, an easy stop on the way to Poʻipū.",
+    signature: "Signature musubi and a poke bowl", setting: "Food truck on Poʻipū Road.", address: "3450 Poipu Rd, Kōloa", phone: "(808) 378-6925", tags: ["Food truck", "Beach lunch"],
+    sources: ["hmKauaiTrucks"], place: { type: "trucks", region: KAUAI.south, rank: 1 } }),
+  kauaiPlace({ id: "f-musubitruck-kalapaki", name: "The Musubi Truck Kalapaki", area: "Kalapaki, Līhuʻe", lat: 21.9605, lon: -159.3535, kind: "Food truck", meals: ["Lunch", "Dinner"], cuisine: "Musubi, poke, bentos", price: 1, web: "https://www.themusubishop.com/", webLabel: "Official website", reservations: "Walk-up; order ahead online", verified: { date: "2026-11-22", source: "themusubishop.com" }, status: "ok",
+    why: "The newest truck, steps from Kalapaki Beach in Līhuʻe, with the full musubi menu. Handy right after you land at LIH.",
+    signature: "Musubi to take to the beach", setting: "Food truck near Kalapaki Beach.", address: "3474 Rice St, Līhuʻe", phone: "(808) 378-2026", tags: ["Food truck", "Near the airport"],
+    sources: ["hmKauaiTrucks"], place: { type: "trucks", region: KAUAI.lihue, rank: 1 } }),
 );
 
 /* Merriman's Kauaʻi: address read from merrimanshawaii.com on 2026-11-22 */
