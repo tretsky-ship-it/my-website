@@ -19,6 +19,8 @@
   /* ------------------------------------------------------------ lookups */
   const ISL = Object.fromEntries(D.islands.map((i) => [i.id, i]));
   const islandName = (id) => (ISL[id] ? ISL[id].name : id);
+  if (D.foodAdded) D.foodAdded.forEach((p) => { if (!D.food.some((x) => x.id === p.id)) D.food.push(p); D.foodPlacement[p.id] = p.place; });
+  if (D.foodSourceLinks) Object.entries(D.foodSourceLinks).forEach(([id, s]) => { const p = D.food.find((x) => x.id === id); if (p) p.sources = s; });
   D.food.forEach((p) => { p.kind2 = "food"; if (D.foodChecks && D.foodChecks[p.id]) Object.assign(p, D.foodChecks[p.id]); });
   D.beaches.forEach((p) => (p.kind2 = "beaches"));
   D.sights.forEach((p) => (p.kind2 = "sights"));
@@ -596,7 +598,10 @@
       links.push(p.web ? `<a class="btn btn-sm primary-link" href="${p.web}" target="_blank" rel="noopener">${esc(p.webLabel)} ↗</a>` : `<span class="small muted">${esc(p.webLabel)}</span>`);
       links.push(`<a class="btn btn-ghost btn-sm" href="${mapUrl(p)}" target="_blank" rel="noopener">Map ↗</a>`);
       links.push(`<a class="btn btn-ghost btn-sm" href="${yelpUrl(p)}" target="_blank" rel="noopener" title="Yelp ratings are separate from our editorial pick">Find on Yelp ↗</a>`);
-      extra = `<p class="small muted">Yelp search link only; we haven't matched a verified listing yet. Ratings there are not part of our recommendation.</p>`;
+      const atPhoto = Object.values(D.photos || {}).find((ph) => ph.at === p.id);
+      extra = (atPhoto ? `<figure class="place-photo"><img src="${atPhoto.src}" alt="${esc(atPhoto.alt)}" width="720" height="540" loading="lazy"><figcaption class="small muted">${photoCredit(atPhoto)}</figcaption></figure>` : "") +
+        ((p.sources || []).length ? `<p class="small"><b>Recommended in:</b> ${p.sources.map((k) => `<a href="${D.foodSources[k].url}" target="_blank" rel="noopener">${esc(D.foodSources[k].label)}</a>`).join("; ")}</p>` : "") +
+        `<p class="small muted">Yelp search link only; we haven't matched a verified listing yet. Ratings there are not part of our recommendation.</p>`;
     } else if (p.kind2 === "beaches") {
       kicker = `Beach · ${isl.name}`;
       facts = [["Area", p.area], ["Generally better for", p.bestFor.join(", ")], ["Lifeguard", p.lifeguard], ["Facilities", p.facilities], ["Permits", p.reservation], ["Quieter", p.quieter], ["Alternative", p.alt]];
@@ -735,7 +740,22 @@
 
   /* ========================================================== FOOD LIST */
   const foodState = { group: "type", island: "", openOnly: true };
+  const photoCredit = (ph) => `Photo: ${ph.page ? `<a href="${ph.page}" target="_blank" rel="noopener">${esc(ph.author)}</a>` : esc(ph.author)}, ${ph.licenseUrl ? `<a href="${ph.licenseUrl}" target="_blank" rel="noopener">${esc(ph.license)}</a>` : esc(ph.license)}`;
+  function renderDishes() {
+    $("#foodDishes").innerHTML = D.dishes.map((d) => {
+      const ph = D.photos[d.photo];
+      const places = d.places.map((id) => BY_ID[id]).filter((p) => p && (!p.status || p.status === "ok"));
+      return `<article class="dish">
+        <figure><img src="${ph.src}" alt="${esc(ph.alt)}" width="720" height="540" loading="lazy"><figcaption>${photoCredit(ph)}${ph.at && BY_ID[ph.at] ? ` · taken at ${esc(BY_ID[ph.at].name)}` : ""}</figcaption></figure>
+        <div class="dish-body"><h4>${esc(d.name)}</h4><p>${esc(d.what)}</p>
+        ${places.length ? `<p class="dish-try"><b>Try it at:</b> ${places.map((p) => `<a href="#${p.id}" data-goto-food="${p.id}">${esc(p.name)}</a> <span class="muted">(${esc(ISL[p.island].name)})</span>`).join(", ")}</p>` : `<p class="dish-try muted">Easy to find at markets and convenience stores on every island.</p>`}</div>
+      </article>`;
+    }).join("");
+    $$("#foodDishes [data-goto-food]").forEach((a) => (a.onclick = (e) => { e.preventDefault(); showPlace(a.dataset.gotoFood); }));
+    $("#photoCredits").innerHTML = Object.entries(D.photos).map(([k, ph]) => `<li>${esc(ph.alt.split(":")[0])}: ${photoCredit(ph)}</li>`).join("");
+  }
   function renderFoodList() {
+    renderDishes();
     $("#foodIslands").innerHTML = [["", "All islands"], ...D.islands.map((i) => [i.id, i.name])].map(([id, n]) =>
       `<label class="chip" for="fi-${id || "all"}"><input type="radio" name="foodIsl" id="fi-${id || "all"}" value="${id}" ${foodState.island === id ? "checked" : ""}><span>${esc(n)}</span></label>`).join("");
     $$("#foodIslands input").forEach((i) => (i.onchange = () => { foodState.island = i.value; drawFoodGroups(); }));
@@ -747,9 +767,10 @@
     const pl = D.foodPlacement[p.id];
     const status = p.status === "temp-closed" ? `<span class="badge badge-bad">Temporarily closed</span>` : p.status === "unconfirmed" ? `<span class="badge badge-bad">Unconfirmed</span>` : isVerified(p) ? `<span class="badge badge-ok">Checked</span>` : "";
     const where = groupBy === "type" ? `${pl.region}, ${ISL[p.island].name}` : (D.foodTypes.find((t) => t.id === pl.type) || {}).label;
+    const n = (p.sources || []).length;
     return `<li class="food-row${p.status && p.status !== "ok" ? " is-off" : ""}">
       <div class="fr-main">
-        <a href="#${p.id}" class="fr-name" data-goto-food="${p.id}">${esc(p.name)}</a>${pl.star ? ` <span class="badge badge-star">Must-try</span>` : ""}
+        <a href="#${p.id}" class="fr-name" data-goto-food="${p.id}">${esc(p.name)}</a>${pl.star ? ` <span class="badge badge-star">Must-try</span>` : ""}${n ? ` <span class="badge badge-guides" title="${esc(p.sources.map((k) => D.foodSources[k].label).join("; "))}">In ${n} ${n === 1 ? "guide" : "guides"}</span>` : ""}
         <span class="fr-sub">${esc(where)} · ${esc(p.signature)}</span>
       </div>
       <div class="fr-side"><span class="fr-price" title="${esc(priceBasis(p.price))}">${priceLabel(p.price)}</span>${status}${p.web ? `<a class="fr-web" href="${p.web}" target="_blank" rel="noopener" aria-label="${esc(p.name)} official website">Site ↗</a>` : ""}</div>
@@ -757,10 +778,11 @@
   }
   function drawFoodGroups() {
     const list = D.food.filter((p) => D.foodPlacement[p.id] && (!foodState.island || p.island === foodState.island) && (!foodState.openOnly || !p.status || p.status === "ok"));
-    const rank = (p) => (D.foodPlacement[p.id].star ? 0 : 100) + (isVerified(p) ? 0 : 10) + D.foodPlacement[p.id].rank;
+    const rank = (p) => (D.foodPlacement[p.id].star ? 0 : 100) - (p.sources || []).length * 6 + (isVerified(p) ? 0 : 4) + D.foodPlacement[p.id].rank;
     let groups;
     if (foodState.group === "type") {
-      groups = D.foodTypes.map((t) => ({ title: t.label, sub: t.blurb, items: list.filter((p) => D.foodPlacement[p.id].type === t.id) }));
+      const typePhoto = { hawaiian: "laulau", local: "plate-lunch", seafood: "ahi-poke", sweets: "haupia" };
+      groups = D.foodTypes.map((t) => ({ title: t.label, sub: t.blurb, photo: typePhoto[t.id], items: list.filter((p) => D.foodPlacement[p.id].type === t.id) }));
     } else {
       groups = [];
       D.islands.forEach((i) => {
@@ -769,7 +791,8 @@
       });
     }
     groups = groups.filter((g) => g.items.length);
-    $("#foodGroups").innerHTML = groups.length ? groups.map((g) => `<section class="food-group card">
+    $("#foodGroups").innerHTML = groups.length ? groups.map((g) => `<section class="food-group card${g.photo ? " has-photo" : ""}">
+        ${g.photo ? `<img class="fg-photo" src="${D.photos[g.photo].src}" alt="${esc(D.photos[g.photo].alt)}" width="720" height="540" loading="lazy">` : ""}
         <header><h3>${esc(g.title)}</h3><p class="small muted">${esc(g.sub)} · ${g.items.length} ${g.items.length === 1 ? "pick" : "picks"}</p></header>
         <ol class="food-rows">${g.items.sort((a, b) => rank(a) - rank(b)).map((p) => foodRow(p, foodState.group)).join("")}</ol>
       </section>`).join("") : `<div class="empty">No picks match. Try all islands.</div>`;
