@@ -61,7 +61,19 @@
   --gutter-r: max(16px, env(safe-area-inset-right, 0px));
   color-scheme: light;
 }
-/* Single light-blue theme by design: the page keeps its daytime palette even when the device uses dark mode. */
+/* Light blue is the default for everyone; the header switch sets data-theme="dark" for a night-ocean version. */
+:root[data-theme="dark"] {
+  --bg: #0b2133; --band: #0f2b42; --surface: #12304a; --surface-2: #163a57; --ink: #e6f4fb; --muted: #a9c7d8;
+  --line: #24506c; --accent: #7ad99a; --accent-strong: #a6ebbb; --accent-ink: #062414; --accent-soft: #173d2e;
+  --lagoon: #4fd3d3; --leaf: #7ad99a; --leaf-soft: #133a2d; --sun: #ffd35c; --sun-soft: #3a300c; --sun-ink: #ffe08a;
+  --lehua: #ff8a7f; --ok: #7ad99a; --ok-bg: #133a2d; --warn: #f2c766; --warn-bg: #3a2d0f; --bad: #ff8a8f; --bad-bg: #3d1719;
+  --hero-top: #0b3050; --hero-mid: #134b72; --hero-low: #1b5a66; --hero-bg: #0b3050; --hero-ink: #ffffff; --hero-muted: #cfe6f2;
+  --hero-accent: #ffd35c; --hero-line: rgba(255, 255, 255, .4); --hero-shadow: rgba(3, 20, 35, .45); --sunword-hl: transparent;
+  --footer-bg: #0f3a24; --footer-ink: #cfe9d8; --focus: #ffb347;
+  --ridge-1: #2e7d4a; --ridge-2: #1d5a33; --postcard-shadow: #061727; --btn-shadow: #04121f;
+  --shadow: 0 1px 2px rgba(0,0,0,.3), 0 4px 16px rgba(0,0,0,.25);
+  color-scheme: dark;
+}
 
 *, *::before, *::after { box-sizing: border-box; }
 html { scroll-behavior: smooth; scroll-padding-top: 76px; }
@@ -650,3 +662,10 @@ h3 { font-size: 1.35rem; }
 .food-group header h3::before, .dish-body h4::before { content: ""; display: inline-block; width: .8em; height: .8em; margin-right: .35em; vertical-align: -.05em; background: var(--leaf);
   -webkit-mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M3.5 20.5C3 11 9 4.5 21 3c-.6 11.5-7 17.6-17.5 17.5zM4 20l9.5-9.5' fill='black' stroke='black' stroke-width='1.2'/></svg>") center / contain no-repeat; mask: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><path d='M3.5 20.5C3 11 9 4.5 21 3c-.6 11.5-7 17.6-17.5 17.5zM4 20l9.5-9.5' fill='black' stroke='black' stroke-width='1.2'/></svg>") center / contain no-repeat; }
 @media (min-width: 1100px) { .dish-strip { grid-template-columns: repeat(5, minmax(0, 1fr)); } .dish-body h4 { font-size: 1.25rem; } .dish-body p, .dish-try { font-size: .88rem; } }
+
+.theme-toggle { flex: none; display: inline-flex; align-items: center; gap: .35rem; height: 40px; padding: 0 .75rem;
+  border: 1.5px solid var(--line); border-radius: 999px; background: var(--surface); color: var(--ink);
+  font: 600 .92rem var(--font-display); cursor: pointer; }
+.theme-toggle:hover { background: var(--surface-2); }
+.theme-toggle svg { width: 18px; height: 18px; }
+@media (max-width: 760px) { .theme-toggle { margin-left: auto; padding: 0; width: 40px; justify-content: center; } .theme-toggle span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); } .trip-pill { margin-left: 0; } }
