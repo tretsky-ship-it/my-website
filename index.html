@@ -1,0 +1,341 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hawaiʻi, Well Planned</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Choose the right Hawaiian island, find food, beaches and history worth the time, check weather, and build a realistic day-by-day plan.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=Source+Sans+3:ital,wght@0,400;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="topbar" id="top">
+  <div class="topbar-inner">
+    <a class="brand" href="#top" aria-label="Hawaiʻi, Well Planned: home">
+      <svg viewBox="0 0 40 24" width="40" height="24" aria-hidden="true"><path d="M2 18c4-6 8-6 12 0s8 6 12 0 8-6 12 0" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/><circle cx="31" cy="6" r="3.5" fill="currentColor"/></svg>
+      <span>Hawaiʻi, Well&nbsp;Planned</span>
+    </a>
+    <nav class="mainnav" aria-label="Sections">
+      <a href="#picker">Island quiz</a>
+      <a href="#islands">Compare</a>
+      <a href="#between">Hopping</a>
+      <a href="#when">When to go</a>
+      <a href="#weather">Weather</a>
+      <a href="#directory">Places</a>
+      <a href="#history">History</a>
+      <a href="#planner">Planner</a>
+      <a href="#essentials">Essentials</a>
+    </nav>
+    <button class="trip-pill" id="tripPill" type="button" aria-haspopup="dialog" aria-controls="tripDrawer">
+      <span class="trip-pill-label">My trip</span>
+      <span class="trip-pill-meta" id="tripPillMeta">0 saved</span>
+    </button>
+  </div>
+</header>
+
+<main id="main">
+
+  <!-- Hero + questionnaire -->
+  <section class="hero" id="picker" aria-labelledby="hero-title">
+    <div class="wrap hero-grid">
+      <div class="hero-copy">
+        <p class="eyebrow">Trip planner for Oʻahu · Maui · Hawaiʻi Island · Kauaʻi · Lānaʻi</p>
+        <h1 id="hero-title">Fewer islands, better days.</h1>
+        <p class="lede">Answer a few questions and we'll suggest the island that fits your trip, explain why, and show what you give up. Then save places and turn them into a realistic plan.</p>
+        <p class="hero-note">For trips under a week, one island usually means more vacation and less time in airports.</p>
+        <div class="hero-actions">
+          <button class="btn btn-ghost" type="button" id="surpriseBtn">Surprise me</button>
+          <a class="btn btn-ghost" href="#islands">I already chose my island</a>
+        </div>
+      </div>
+      <div class="quiz card" id="quiz" aria-live="polite"></div>
+    </div>
+    <div class="wrap">
+      <div id="quizResult" class="quiz-result" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- Islands -->
+  <section class="section" id="islands" aria-labelledby="islands-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Island guide</p>
+        <h2 id="islands-title">Compare the five islands</h2>
+        <p class="section-lede">Scores are our editorial judgment on a 1–5 scale to help you compare. They describe fit, not quality. Sort by what matters to you.</p>
+      </header>
+      <div class="compare-controls" role="group" aria-label="Sort islands">
+        <label for="compareSort">Sort by</label>
+        <select id="compareSort"></select>
+        <label for="compareNights">Trip length</label>
+        <select id="compareNights">
+          <option value="">Any</option>
+          <option value="3">3–4 nights</option>
+          <option value="5">5–7 nights</option>
+          <option value="8">8–10 nights</option>
+          <option value="11">11+ nights</option>
+        </select>
+      </div>
+      <div class="table-scroll"><table class="compare" id="compareTable"></table></div>
+      <div class="island-cards" id="islandCards"></div>
+    </div>
+  </section>
+
+  <!-- Between islands -->
+  <section class="section alt" id="between" aria-labelledby="between-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Traveling between islands</p>
+        <h2 id="between-title">Island hopping costs most of a day</h2>
+        <p class="section-lede">Visitors travel between islands almost entirely by air. The only scheduled passenger ferry links Maui and Lānaʻi. The flight is short, but checkout, rental cars and airport buffers turn a 40-minute hop into a half day or more.</p>
+      </header>
+      <div class="between-grid">
+        <div class="card">
+          <h3>Estimate a transfer day</h3>
+          <div class="field-row">
+            <label for="routeFrom">From</label>
+            <select id="routeFrom"></select>
+            <label for="routeTo">To</label>
+            <select id="routeTo"></select>
+          </div>
+          <div id="routeOut" aria-live="polite"></div>
+        </div>
+        <div class="card">
+          <h3>Operators to check</h3>
+          <p class="muted small">Routes, schedules, fares and baggage rules change. These links go to the operators directly. Details last reviewed <span class="mono" data-content-date></span>; treat route notes as estimates until you confirm them.</p>
+          <ul class="operator-list" id="operatorList"></ul>
+          <h3 class="mt">Adding an island: worth it?</h3>
+          <div id="hopAdvice"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- When to go -->
+  <section class="section" id="when" aria-labelledby="when-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Best time to go</p>
+        <h2 id="when-title">When it's typically less busy</h2>
+        <p class="section-lede">This is general guidance from typical visitor patterns, not a crowd forecast. Demand varies by island, area and year. <span class="badge badge-conf">Confidence: medium</span></p>
+      </header>
+      <div class="month-strip" id="monthStrip" role="list"></div>
+      <div class="when-grid">
+        <div class="card" id="monthDetail" aria-live="polite"></div>
+        <div class="card">
+          <h3>Compare flexible date ranges</h3>
+          <p class="muted small">Pick up to three windows you could travel in.</p>
+          <div id="rangeCompare"></div>
+        </div>
+        <div class="card">
+          <h3>Quieter times of day</h3>
+          <ul class="ticks" id="crowdTips"></ul>
+          <p class="small muted">Sources: <a data-src="dbedtVisitor"></a>; event and holiday calendars. Reviewed <span class="mono" data-content-date></span>.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Weather -->
+  <section class="section alt" id="weather" aria-labelledby="weather-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Weather for your trip</p>
+        <h2 id="weather-title">Current, forecast, or typical?</h2>
+        <p class="section-lede">We label each kind of weather data. Forecasts cover the next 10 days. Further out, we show a historical estimate for the same calendar dates, which is not a forecast. Conditions vary sharply by coast, elevation and neighborhood.</p>
+      </header>
+      <div class="weather-controls">
+        <div class="field">
+          <label for="wxIsland">Island</label>
+          <select id="wxIsland"></select>
+        </div>
+        <fieldset class="field">
+          <legend>Areas to compare</legend>
+          <div id="wxAreas" class="chips"></div>
+        </fieldset>
+        <div class="field">
+          <label for="wxStart">Trip start</label>
+          <input type="date" id="wxStart">
+        </div>
+        <div class="field">
+          <label for="wxNights">Nights</label>
+          <input type="number" id="wxNights" min="1" max="30" value="7">
+        </div>
+      </div>
+      <div id="wxOut" aria-live="polite"></div>
+      <div class="wx-links card">
+        <h3>Official sources and conditions</h3>
+        <p class="small">Air weather says nothing about ocean safety. Check surf, currents and trail conditions separately.</p>
+        <ul class="linklist">
+          <li><a data-src="nwsHfo"></a></li>
+          <li><a data-src="beachSafety"></a></li>
+          <li><a data-src="trails"></a></li>
+          <li><a data-src="climateNormals"></a></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- Directory -->
+  <section class="section" id="directory" aria-labelledby="dir-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Food, beaches &amp; must-sees</p>
+        <h2 id="dir-title">Places worth the time</h2>
+        <p class="section-lede">Every listing says why it's here. We don't accept paid placement. Cards marked <span class="badge badge-warn">Not yet verified</span> have editorial descriptions but contact, hours and access details still need checking. Follow the official link before you go.</p>
+      </header>
+      <div class="tabs" role="tablist" aria-label="Directory">
+        <button role="tab" id="tab-food" aria-controls="panel-dir" aria-selected="true" data-kind="food">Food &amp; drink</button>
+        <button role="tab" id="tab-beaches" aria-controls="panel-dir" aria-selected="false" data-kind="beaches" tabindex="-1">Beaches &amp; water</button>
+        <button role="tab" id="tab-sights" aria-controls="panel-dir" aria-selected="false" data-kind="sights" tabindex="-1">Must-sees</button>
+      </div>
+      <div class="filters" id="filters" role="search"></div>
+      <p class="result-count" id="resultCount" aria-live="polite"></p>
+      <div id="panel-dir" role="tabpanel" aria-labelledby="tab-food" class="card-grid"></div>
+    </div>
+  </section>
+
+  <!-- History -->
+  <section class="section alt" id="history" aria-labelledby="history-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">History of the islands</p>
+        <h2 id="history-title">Living history, island by island</h2>
+        <p class="section-lede">A short introduction for visitors, not the complete story. Native Hawaiian culture is living and continuing. <span class="badge badge-warn">Pending local cultural review</span></p>
+      </header>
+      <div class="kinds" id="historyKinds"></div>
+      <div class="tabs" role="tablist" aria-label="Island histories" id="historyTabs"></div>
+      <div id="historyPanel" role="tabpanel" class="history-panel"></div>
+    </div>
+  </section>
+
+  <!-- Planner -->
+  <section class="section" id="planner" aria-labelledby="planner-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Easy trip planner</p>
+        <h2 id="planner-title">Build a day-by-day plan</h2>
+        <p class="section-lede">Tell us the basics. We group days by area, leave room for downtime, and flag days that ask too much. Everything stays editable and is saved in this browser.</p>
+      </header>
+      <form class="planner-form card" id="plannerForm" novalidate></form>
+      <div id="plannerWarnings" aria-live="polite"></div>
+      <div class="plan-toolbar" id="planToolbar" hidden>
+        <button type="button" class="btn btn-ghost" id="undoBtn" disabled>Undo</button>
+        <button type="button" class="btn btn-ghost" id="shareBtn">Copy share link</button>
+        <button type="button" class="btn btn-ghost" id="copyTextBtn">Copy as text</button>
+        <button type="button" class="btn btn-ghost" id="icsBtn">Calendar file (.ics)</button>
+        <button type="button" class="btn btn-ghost" id="printBtn">Print</button>
+        <span class="toast" id="planToast" role="status"></span>
+      </div>
+      <div class="plan-layout">
+        <div id="planDays" class="plan-days"></div>
+        <aside class="plan-side" id="planSide" aria-label="Checklist"></aside>
+      </div>
+    </div>
+  </section>
+
+  <!-- Essentials -->
+  <section class="section alt" id="essentials" aria-labelledby="ess-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Practical essentials</p>
+        <h2 id="ess-title">Before you go</h2>
+      </header>
+      <div class="ess-grid">
+        <div class="card">
+          <h3>Respectful travel</h3>
+          <ul class="ticks" id="stewardList"></ul>
+        </div>
+        <div class="card">
+          <h3>Emergency and official information</h3>
+          <ul class="linklist" id="emergencyList"></ul>
+        </div>
+        <div class="card">
+          <h3>Packing by situation</h3>
+          <div id="packingList"></div>
+        </div>
+        <div class="card">
+          <h3>Arrival and getting around</h3>
+          <ul class="ticks">
+            <li>Book rental cars early; island fleets are limited and peak periods sell out.</li>
+            <li>Plan a light first day. Mainland flights often land in the afternoon, and jet lag catches up by evening.</li>
+            <li>Leave 3 hours on your departure day between checkout and an inter-island flight, more on Hawaiʻi Island and Kauaʻi north shore.</li>
+            <li>Parking at popular beaches and trailheads fills early; some state parks charge nonresident parking fees.</li>
+            <li>Check whether a vacation rental is legally permitted; counties restrict short-term rentals in many areas.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="about" aria-labelledby="about-title">
+    <div class="wrap about">
+      <div>
+        <h2 id="about-title">How we choose and check</h2>
+        <ul class="ticks">
+          <li>Editorial picks are chosen for a specific reason (a signature dish, local history, setting or value), not by popularity alone or payment. We have no sponsored listings. If that changes, sponsored items will be labeled and kept out of editorial rankings.</li>
+          <li>Facts that change (hours, reservations, access, safety) come from official sources. Each card shows when it was last verified or tells you it hasn't been.</li>
+          <li>Ratings from review sites appear only as a secondary link and are never mixed with our recommendations.</li>
+          <li>History and cultural content is drafted for review by Hawaiian cultural practitioners and local historians.</li>
+        </ul>
+        <p class="small muted">Content last reviewed <span class="mono" data-content-date></span>. <span id="editorialStatus"></span></p>
+      </div>
+      <div class="card">
+        <h3>See something wrong or out of date?</h3>
+        <p class="small">Tell us about closed businesses, changed hours, access rules or anything culturally inaccurate.</p>
+        <button type="button" class="btn" data-report="General">Report an update</button>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <p>Hawaiʻi, Well Planned is a planning aid. It does not replace lifeguards, park rangers, official notices or local guidance. Conditions change; when in doubt, don't go out.</p>
+  </div>
+</footer>
+
+<!-- Trip drawer -->
+<dialog class="drawer" id="tripDrawer" aria-labelledby="drawerTitle">
+  <div class="drawer-inner">
+    <div class="drawer-head">
+      <h2 id="drawerTitle">My trip</h2>
+      <button type="button" class="icon-btn" id="closeDrawer" aria-label="Close trip summary">×</button>
+    </div>
+    <div id="drawerBody"></div>
+  </div>
+</dialog>
+
+<!-- Report dialog -->
+<dialog class="modal" id="reportDialog" aria-labelledby="reportTitle">
+  <form method="dialog" id="reportForm" class="modal-inner">
+    <h2 id="reportTitle">Report an update</h2>
+    <p class="small muted" id="reportAbout"></p>
+    <label for="reportType">What's wrong?</label>
+    <select id="reportType">
+      <option>Closed or moved</option>
+      <option>Hours or contact details changed</option>
+      <option>Access, permit or reservation rule changed</option>
+      <option>Safety concern</option>
+      <option>Cultural or place-name accuracy</option>
+      <option>Something else</option>
+    </select>
+    <label for="reportText">Details and source, if you have one</label>
+    <textarea id="reportText" rows="4"></textarea>
+    <p class="small muted">Reports are reviewed by an editor before anything changes on the page. User reports are never shown as verified facts.</p>
+    <div class="modal-actions">
+      <button type="button" class="btn btn-ghost" id="reportCancel">Cancel</button>
+      <button type="submit" class="btn" id="reportSubmit">Send report</button>
+    </div>
+    <p class="small" id="reportStatus" role="status"></p>
+  </form>
+</dialog>
+
+<script src="js/data.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>
