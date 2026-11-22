@@ -113,6 +113,7 @@ HWP.photos = {
   "garlic-shrimp": { src: "images/food/garlic-shrimp-giovannis.jpg", alt: "Spicy shrimp with rice and lemon from Giovanni's shrimp truck", author: "Daniel Ramirez", license: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0", page: "https://commons.wikimedia.org/wiki/File:Spicy_Shrimp_from_Giovanni%27s_shrimp_truck_(16774638669).jpg", at: "f-giovannis" },
   "spam-musubi": { src: "images/food/spam-musubi.jpg", alt: "Spam musubi: grilled Spam on rice wrapped with nori", author: "Ocdp", license: "CC0", licenseUrl: "https://creativecommons.org/publicdomain/zero/1.0/", page: "https://commons.wikimedia.org/wiki/File:Spam_musubi_001.jpg" },
   "poi": { src: "images/food/poi.jpg", alt: "A bowl of purple-grey poi with a spoon", author: "Bshams", license: "Public domain", licenseUrl: "", page: "https://commons.wikimedia.org/wiki/File:Bowl_of_poi.jpg" },
+  "shave-ice": { src: "images/food/shave-ice.jpg", alt: "Shave ice: a cup of finely shaved ice soaked in orange and red syrups", author: "AlaskaDave", license: "CC BY-SA 3.0", licenseUrl: "https://creativecommons.org/licenses/by-sa/3.0", page: "https://commons.wikimedia.org/wiki/File:Hilo_Ice_Shave.JPG", note: "Kawate Seed Shop, Hilo" },
   "haupia": { src: "images/food/haupia.jpg", alt: "Squares of white haupia coconut pudding on a plate", author: "Arnold Gatilao", license: "CC BY 2.0", licenseUrl: "https://creativecommons.org/licenses/by/2.0", page: "https://commons.wikimedia.org/wiki/File:Haupia.jpg" },
 };
 
@@ -123,6 +124,7 @@ HWP.dishes = [
   { id: "plate-lunch", name: "Plate lunch", what: "Two scoops rice, mac salad and a main: the islands' everyday lunch.", photo: "plate-lunch", places: ["f-rainbow", "f-tinroof", "f-alohamixed", "f-marksplace"] },
   { id: "saimin", name: "Saimin", what: "Noodle soup in a light dashi broth; Maui's dry mein serves the broth on the side.", photo: "saimin", places: ["f-hamura", "f-samsato", "f-shiges"] },
   { id: "laulau", name: "Laulau", what: "Pork and butterfish wrapped in lūʻau leaves and steamed until tender.", photo: "laulau", places: ["f-helenas", "f-highwayinn", "f-superjs"] },
+  { id: "shave-ice", name: "Shave ice", what: "Ice shaved fine as snow and soaked in fruit syrups, often with ice cream or azuki beans underneath.", photo: "shave-ice", places: ["f-matsumoto", "f-aokis", "f-ululanis"] },
   { id: "garlic-shrimp", name: "Garlic shrimp", what: "Kahuku's buttery, garlicky shrimp over rice, eaten at a truck.", photo: "garlic-shrimp", places: ["f-giovannis"] },
   { id: "spam-musubi", name: "Spam musubi", what: "Grilled Spam on rice wrapped in nori. Sold at nearly every market and convenience store.", photo: "spam-musubi", places: [] },
   { id: "poi", name: "Poi", what: "Pounded taro, a Hawaiian staple. Try it fresh alongside kalua pig.", photo: "poi", places: ["f-helenas", "f-highwayinn"] },
