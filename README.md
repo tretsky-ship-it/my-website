@@ -36,6 +36,11 @@ All content lives in `js/data.js`.
   Lānaʻi City Grille) and Punaluʻu Bake Shop is marked temporarily closed. The planner skips those four. Seven remain
   unverified: no official site (T. Komoda, Hamura Saimin), or the site blocked automated access or was unreachable
   (Da Poke Shack, Blue Ginger Café, Big Island Candies, Giovanni's, Ululani's).
+- **13 food places were added from research** (Hawaii Magazine readers' polls, Honolulu Magazine, Frommer's,
+  Food Network, travel guides; see `js/food-extra.js`). They cite their sources on the page but haven't been checked
+  against official websites yet. Reddit couldn't be searched with the tools used.
+- **Food photos** in `images/food/` are from Wikimedia Commons; author and license for each are in `HWP.photos`
+  and shown on the page. Keep the credits if you reuse them.
 - **Beach and sight listings are drafts.** They have `verified: null`, so the UI shows "Not yet verified"
   and routes people to the official source. When a listing is checked, add
   `verified: { date: "YYYY-MM-DD", by: "reviewer" }` and the card will show the verification date.

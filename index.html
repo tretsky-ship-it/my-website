@@ -22,11 +22,11 @@
     </a>
     <nav class="mainnav" aria-label="Sections">
       <a href="#picker">Island quiz</a>
+      <a href="#food">Food</a>
       <a href="#islands">Compare</a>
       <a href="#between">Hopping</a>
       <a href="#when">When to go</a>
       <a href="#weather">Weather</a>
-      <a href="#food">Food</a>
       <a href="#directory">Places</a>
       <a href="#history">History</a>
       <a href="#planner">Planner</a>
@@ -50,6 +50,7 @@
         <p class="lede">Answer a few questions and we'll suggest the island that fits your trip, explain why, and show what you give up. Then save places and turn them into a realistic plan.</p>
         <p class="hero-note">For trips under a week, one island usually means more vacation and less time in airports.</p>
         <div class="hero-actions">
+          <a class="btn btn-sun" href="#food">Where to eat</a>
           <button class="btn btn-ghost" type="button" id="surpriseBtn">Surprise me</button>
           <a class="btn btn-ghost" href="#islands">I already chose my island</a>
         </div>
@@ -58,6 +59,30 @@
     </div>
     <div class="wrap">
       <div id="quizResult" class="quiz-result" aria-live="polite"></div>
+    </div>
+  </section>
+
+  <!-- Food guide -->
+  <section class="section food-section" id="food" aria-labelledby="food-title">
+    <div class="wrap">
+      <header class="section-head">
+        <p class="eyebrow">Where to eat</p>
+        <h2 id="food-title">The food list</h2>
+        <p class="section-lede">The places people keep recommending, from local magazines, readers' polls and travel guides. Browse by what you're craving or where you'll be. Picks marked <span class="badge badge-star">Must-try</span> are the ones worth planning a day around.</p>
+      </header>
+      <h3 class="dish-head">Signature dishes, and where to try them</h3>
+      <div class="dish-strip" id="foodDishes"></div>
+      <h3 class="dish-head">Our picks by island</h3>
+      <div class="food-controls">
+        <div class="seg" role="group" aria-label="Group food by">
+          <button type="button" class="seg-btn" data-group="type" aria-pressed="true">By type of food</button>
+          <button type="button" class="seg-btn" data-group="area" aria-pressed="false">By area</button>
+        </div>
+        <div class="chips" role="group" aria-label="Island" id="foodIslands"></div>
+        <label class="check" for="foodOpenOnly"><input type="checkbox" id="foodOpenOnly" checked> Hide closed or unconfirmed</label>
+      </div>
+      <div class="food-groups" id="foodGroups"></div>
+      <p class="small muted food-note">Ranking combines our must-try picks with how many of the guides we read recommend a place (shown as “In 3 guides”). It isn't a star rating. Places checked against their official websites on 2026-11-22 show a <span class="badge badge-ok">Checked</span> label; newly added places haven't been checked yet.</p>
     </div>
   </section>
 
@@ -181,27 +206,6 @@
     </div>
   </section>
 
-  <!-- Food guide -->
-  <section class="section food-section" id="food" aria-labelledby="food-title">
-    <div class="wrap">
-      <header class="section-head">
-        <p class="eyebrow">Where to eat</p>
-        <h2 id="food-title">The food list</h2>
-        <p class="section-lede">Our top picks on every island, grouped the way you'd actually choose: by where you'll be, or by what you're craving. Picks marked <span class="badge badge-star">Must-try</span> are the ones we'd plan a day around.</p>
-      </header>
-      <div class="food-controls">
-        <div class="seg" role="group" aria-label="Group food by">
-          <button type="button" class="seg-btn" data-group="type" aria-pressed="true">By type of food</button>
-          <button type="button" class="seg-btn" data-group="area" aria-pressed="false">By area</button>
-        </div>
-        <div class="chips" role="group" aria-label="Island" id="foodIslands"></div>
-        <label class="check" for="foodOpenOnly"><input type="checkbox" id="foodOpenOnly" checked> Hide closed or unconfirmed</label>
-      </div>
-      <div class="food-groups" id="foodGroups"></div>
-      <p class="small muted food-note">Ranked by our editors, not by star ratings. Places checked against their official websites on 2026-11-22 show a <span class="badge badge-ok">Checked</span> label. We don't show review-site ratings here; each full listing has a separate Yelp link.</p>
-    </div>
-  </section>
-
   <!-- Directory -->
   <section class="section" id="directory" aria-labelledby="dir-title">
     <div class="wrap">
@@ -311,6 +315,11 @@
         <p class="small">Tell us about closed businesses, changed hours, access rules or anything culturally inaccurate.</p>
         <button type="button" class="btn" data-report="General">Report an update</button>
       </div>
+      <div class="photo-credits">
+        <h3>Photo credits</h3>
+        <p class="small muted">Food photos are from Wikimedia Commons under the licenses shown. They show the dish, not necessarily the restaurant listed beside it, unless the caption says so.</p>
+        <ul class="small" id="photoCredits"></ul>
+      </div>
     </div>
   </section>
 </main>
@@ -358,6 +367,7 @@
 </dialog>
 
 <script src="js/data.js"></script>
+<script src="js/food-extra.js"></script>
 <script src="js/app.js"></script>
 </body>
 </html>
