@@ -42,6 +42,11 @@ All content lives in `js/data.js`.
 - **Kauaʻi has 105 food listings.** About 60 were added from area round-ups and topic guides (breakfast,
   plate lunch, bars, burgers, tacos, sushi, food trucks); each cites the guide it came from. They are search-based
   and haven't been checked against official websites.
+- **Oʻahu (101), Maui (107), Hawaiʻi Island (79) and Lānaʻi (8)** were filled out on 2026-11-23 in
+  `js/food-islands.js`. The core is every food winner in HAWAIʻI Magazine's 2026 Readers' Choice polls and
+  HONOLULU Magazine's 2026 Hale ʻAina Awards, with each place's placings shown on its card. Maui and the Big Island
+  add 2025 polls, ʻAipono winners, Frolic's August 2026 Lahaina reopening tracker and area guides. These cite
+  their sources but haven't been checked against official websites. Molokaʻi isn't covered (not an island on the site).
 - **Food photos** in `images/food/` are from Wikimedia Commons; author and license for each are in `HWP.photos`
   and shown on the page. Keep the credits if you reuse them.
 - **Beach and sight listings are drafts.** They have `verified: null`, so the UI shows "Not yet verified"
