@@ -831,8 +831,8 @@ HWP.foodChecks = {
   "f-peles": { verified: { date: "2026-11-22", source: "pelesothergarden.com" }, status: "ok",
     phone: "808-565-9628", hours: "Mon–Fri: lunch 11 am–2 pm, happy hour 4:30–6:30 pm, dinner 5–8 pm", reservations: "Online reservations available",
     web: "https://pelesothergarden.com/peles/" },
-  "f-lcgrille": { verified: { date: "2026-11-22", source: "hotellanai.com" }, status: "unconfirmed",
-    note: "Hotel Lānaʻi's website doesn't mention this restaurant, so we couldn't confirm it's still operating. Ask the hotel (808-565-7211)." },
+  "f-lcgrille": { status: "ok",
+    note: "Now called Lānaʻi City Bar & Grill, the name readers voted for in HAWAIʻI Magazine's 2026 poll. Hotel Lānaʻi's website doesn't describe it, so call ahead (808-565-7211)." },
   "f-nobu": { verified: { date: "2026-11-22", source: "noburestaurants.com" }, status: "ok",
     reservations: "Reservations through the official Nobu Lānaʻi page", web: "https://www.noburestaurants.com/lanai/home" },
 };

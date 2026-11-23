@@ -741,7 +741,7 @@
   /* ========================================================== FOOD LIST */
   const foodState = { view: "list", island: "", openOnly: true, type: "", area: "", meal: "", price: "", sort: "pop", popularOnly: false, limit: 30, cuisine: "" };
   /* Popularity = how many guides and readers' polls recommend a place (no star ratings available). */
-  const POLLS = new Set(["hm2026maui", "hm2022maui", "hmKauaiPlate", "hmKauaiShave", "hm2026all", "hmKauaiTrucks"]);
+  const POLLS = new Set(["hm2026maui", "hm2022maui", "hmKauaiPlate", "hmKauaiShave", "hm2026all", "hmKauaiTrucks", "hm2026oahu", "hm2026big", "hm2026lanai", "haleAina2026", "hm2025maui", "hm2025big", "aipono2025", "hmNew2025"]);
   const isReadersPick = (p) => (p.sources || []).some((k) => POLLS.has(k));
   const popScore = (p) => { const s = p.sources || []; const pl = D.foodPlacement[p.id] || {}; return s.length * 2 + s.filter((k) => POLLS.has(k)).length * 2 + (pl.star ? 3 : 0) + (isVerified(p) ? 1 : 0); };
   /* Pineapple score (our rating, 2–5): every listed place is recommended by at least one source. */
@@ -873,6 +873,8 @@
     ["local", "Local plate lunch", /plate lunch|loco moco|saimin|musubi|drive-in|mac salad|\bbento|plantation|dry mein/i],
     ["japanese", "Japanese & sushi", /japanese|sushi|ramen|izakaya|udon|\bnobu\b/i],
     ["chinese", "Chinese", /chinese|dim sum|manapua|chow fun/i],
+    ["vietnamese", "Vietnamese", /vietnam|\bpho\b/i],
+    ["vegan", "Vegan & vegetarian", /vegan|vegetarian/i],
     ["poke", "Poke & seafood", /pok[eé]|\bfish|seafood|shrimp|\bahi\b/i],
     ["american", "Burgers, BBQ & pub", /burger|barbecue|\bbbq|steak|\bpub\b|brew|grill|broiler/i],
     ["italian", "Pizza & Italian", /pizza|italian/i],
