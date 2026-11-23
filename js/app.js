@@ -739,7 +739,7 @@
   }
 
   /* ========================================================== FOOD LIST */
-  const foodState = { view: "list", island: "", openOnly: true, type: "", area: "", meal: "", price: "", sort: "pop", popularOnly: false, limit: 30 };
+  const foodState = { view: "list", island: "", openOnly: true, type: "", area: "", meal: "", price: "", sort: "pop", popularOnly: false, limit: 30, cuisine: "" };
   /* Popularity = how many guides and readers' polls recommend a place (no star ratings available). */
   const POLLS = new Set(["hm2026maui", "hm2022maui", "hmKauaiPlate", "hmKauaiShave", "hm2026all", "hmKauaiTrucks"]);
   const isReadersPick = (p) => (p.sources || []).some((k) => POLLS.has(k));
@@ -848,6 +848,9 @@
     $("#ffType").innerHTML = radio("fft", [["", "Anything"], ...D.foodTypes.map((t) => [t.id, t.label])], foodState.type);
     $("#ffIsland").innerHTML = radio("ffi", [["", "All islands"], ...D.islands.map((i) => [i.id, i.name])], foodState.island);
     $$("#ffType input").forEach((i) => (i.onchange = () => { foodState.type = i.value; foodState.limit = 30; drawFood(); }));
+    const czUsed = CUISINES.filter(([id]) => D.food.some((p) => D.foodPlacement[p.id] && cuisinesOf(p).includes(id)));
+    $("#ffCuisine").innerHTML = radio("ffc", [["", "Any cuisine"], ...czUsed.map(([id, l]) => [id, l])], foodState.cuisine);
+    $$("#ffCuisine input").forEach((i) => (i.onchange = () => { foodState.cuisine = i.value; foodState.limit = 30; drawFood(); }));
     $$("#ffIsland input").forEach((i) => (i.onchange = () => { foodState.island = i.value; foodState.area = ""; foodState.limit = 30; fillAreas(); drawFood(); }));
     [["ffArea", "area"], ["ffMeal", "meal"], ["ffPrice", "price"], ["ffSort", "sort"]].forEach(([id, k]) => ($("#" + id).onchange = (e) => { foodState[k] = e.target.value; foodState.limit = 30; drawFood(); }));
     $("#ffPopular").onchange = (e) => { foodState.popularOnly = e.target.checked; drawFood(); };
@@ -862,6 +865,21 @@
     $("#ffArea").innerHTML = `<option value="">Anywhere</option>` + regions.map((r) => `<option value="${esc(r.replace(/^.*?: /, ""))}">${esc(r)}</option>`).join("");
     $("#ffArea").value = foodState.area;
   }
+  // Cuisine tags, worked out from each place's name, kind, cuisine and signature dish.
+  const CUISINES = [
+    ["thai", "Thai", /\bthai\b/i],
+    ["mexican", "Mexican & tacos", /mexican|taco|taquer|chalupa|\bbaja\b/i],
+    ["hawaiian", "Hawaiian", /hawaiian|kalua|laulau|\bpoi\b|\btaro\b|kalo/i],
+    ["local", "Local plate lunch", /plate lunch|loco moco|saimin|musubi|drive-in|mac salad|\bbento|plantation|dry mein/i],
+    ["japanese", "Japanese & sushi", /japanese|sushi|ramen|izakaya|udon|\bnobu\b/i],
+    ["chinese", "Chinese", /chinese|dim sum|manapua|chow fun/i],
+    ["poke", "Poke & seafood", /pok[eé]|\bfish|seafood|shrimp|\bahi\b/i],
+    ["american", "Burgers, BBQ & pub", /burger|barbecue|\bbbq|steak|\bpub\b|brew|grill|broiler/i],
+    ["italian", "Pizza & Italian", /pizza|italian/i],
+    ["mediterranean", "Mediterranean", /mediterranean|falafel|greek/i],
+    ["farm", "Farm-to-table & regional", /farm-to-table|hawaii regional|farm food|french-asian/i],
+  ];
+  const cuisinesOf = (p) => p._cz || (p._cz = p.cuisines || CUISINES.filter(([, , re]) => re.test([p.name, p.kind, p.cuisine, p.signature].join(" "))).map(([id]) => id));
   function foodFiltered() {
     const f = foodState;
     return D.food.filter((p) => {
@@ -869,6 +887,7 @@
       if (f.openOnly && p.status && p.status !== "ok") return false;
       if (f.island && p.island !== f.island) return false;
       if (f.type && pl.type !== f.type) return false;
+      if (f.cuisine && !cuisinesOf(p).includes(f.cuisine)) return false;
       if (f.area && pl.region !== f.area) return false;
       if (f.meal && !p.meals.includes(f.meal)) return false;
       if (f.price && p.price > +f.price) return false;

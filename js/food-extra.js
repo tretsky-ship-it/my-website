@@ -295,7 +295,6 @@ HWP.foodTypes.find((t) => t.id === "trucks").label = "Food trucks & tacos";
   K("f-bubba", "Bubba Burgers", "Kapaʻa (also Poʻipū)", "east", "local", "Burgers", 1, ["Lunch", "Dinner"], "A long-running counter-serve burger stand using Kauaʻi beef.", "Kauaʻi beef burger", ["kapaaRound", "poipuRound"]);
   K("f-kenji", "Kenji Burger", "Kapaʻa", "east", "local", "Burgers and sushi burritos", 2, ["Lunch", "Dinner"], "The most-recommended burger on the east side: grass-fed Kauaʻi beef with Japanese twists, plus sushi burritos.", "Hapa burger", ["eatsKauai"], { place: { type: "local", region: KAUAI.east, star: true, rank: 3 } });
   K("f-streetburger", "Street Burger", "Wailua", "east", "bars", "Burger pub", 2, ["Lunch", "Dinner", "Drinks"], "An upscale burger micro-pub built around fresh local products.", "Burger and a local beer", ["kapaaRound"]);
-  K("f-anattas", "Anatta's Thai Street Food", "Kapaʻa", "east", "trucks", "Thai", 1, ["Lunch", "Dinner"], "Well-rated Thai street food; reviewers single out the pad Thai and fried rice.", "Pad Thai", ["kapaaRound"]);
   K("f-tikitacos", "Tiki Tacos", "Kapaʻa", "east", "trucks", "Tacos", 1, ["Lunch", "Dinner"], "Huge tacos on handmade tortillas, with good vegetarian options.", "Fish and kalua pork tacos", ["eatsKauai"]);
   K("f-wailuashave", "Wailua Shave Ice", "Kapaʻa", "east", "shaveice", "Shave ice", 1, ["Snack"], "Highly rated east side shave ice with fresh-fruit syrups and toppings.", "Shave ice with fruit purées", ["kapaaRound", "hmKauaiShave"]);
   K("f-jo2", "JO2", "Kapaʻa", "east", "special", "Natural French-Asian", 4, ["Dinner"], "Chef Jean-Marie Josselin's seasonal fine dining, with a menu that changes often.", "Seasonal tasting dishes", ["kapaaRound"], { reservations: "Reservations recommended (verify)" });
@@ -350,3 +349,33 @@ HWP.foodTypes.find((t) => t.id === "trucks").label = "Food trucks & tacos";
 
 /* Extra mentions for places already listed */
 ["f-marksplace", "f-ponomarket"].forEach((id) => { const p = HWP.foodAdded.find((x) => x.id === id); if (p && !p.sources.includes("plateKauai")) p.sources.push("plateKauai"); });
+
+/* Kauaʻi Thai: 18 places from a list shared by the site owner on 2026-11-23. Not yet checked against official sites. */
+HWP.foodTypes.splice(HWP.foodTypes.findIndex((t) => t.id === "trucks") + 1, 0, { id: "thai", label: "Thai", blurb: "Curries, pad Thai and noodle bowls, often from a truck" });
+(function () {
+  const R = { lihue: [KAUAI.lihue, 21.97, -159.37], east: [KAUAI.east, 22.07, -159.32], north: [KAUAI.north, 22.205, -159.49], south: [KAUAI.south, 21.885, -159.46], west: [KAUAI.west, 21.955, -159.665] };
+  const jit = (id, salt) => { let h = salt; for (const c of id) h = (h * 31 + c.charCodeAt(0)) % 9973; return (h / 9973 - .5) * .012; };
+  const T = (id, name, area, r, kind, price, meals, why, signature, note, rank) => {
+    const [region, lat, lon] = R[r];
+    HWP.foodAdded.push(kauaiPlace({ id, name, area, lat: lat + jit(id, 1), lon: lon + jit(id, 7), kind, price, meals, cuisine: "Thai", why, signature, note: (note ? note + " " : "") + "Many are trucks with changing hours; check before you go.",
+      setting: /truck/i.test(kind) ? "Food truck." : "Restaurant.", tags: ["Thai"], sources: [], place: { type: "thai", region, rank } }));
+  };
+  T("f-kauaithai", "Kauai Thai Food", "North end of Kapaʻa, near beach access", "east", "Thai food truck", 1, ["Lunch", "Dinner"], "A Thai food truck at the north end of Kapaʻa, handy before or after the beach path.", "Pad Thai or a curry plate", "Closed Sundays.", 0);
+  T("f-8e88", "8E88 Thai & Poké", "Kapaʻa", "east", "Thai and poke truck", 1, ["Lunch", "Dinner"], "A truck serving both Thai plates and poke bowls, with seating out back.", "Thai plate or a poke bowl", "", 1);
+  T("f-bigmonster-kapaa", "Big Monster Sushi & Thai (Kapaʻa)", "Kapaʻa, next to Big Save", "east", "Sit-down Thai and sushi", 2, ["Lunch", "Dinner"], "A sit-down Thai and sushi restaurant next to Big Save in Kapaʻa.", "Curry and a sushi roll", "Closed Mondays.", 2);
+  T("f-coconutthai", "Coconut Thai & Chinese", "Near Coconut Marketplace, Kapaʻa", "east", "Casual Thai and Chinese", 2, ["Lunch", "Dinner"], "A casual Thai and Chinese spot near Coconut Marketplace.", "Thai curry or fried rice", "Open daily.", 3);
+  T("f-nalus", "Nalu's Thai Fusion", "Kinipopo Shopping Village, Wailua", "east", "Thai fusion restaurant", 3, ["Dinner"], "A new, more upscale Thai fusion dinner spot in Kinipopo Shopping Village.", "Thai fusion dinner", "Closed Wednesdays. Dinner only.", 4);
+  T("f-bigmonster-lihue", "Big Monster Sushi & Thai (Līhuʻe)", "Līhuʻe", "lihue", "Sit-down Thai and sushi", 2, ["Lunch", "Dinner"], "The busier of the two Big Monster locations.", "Curry and a sushi roll", "", 5);
+  T("f-anattas", "Anatta's Thai Street Food (Līhuʻe)", "Rice St, Līhuʻe", "lihue", "Thai food truck", 1, ["Lunch", "Dinner"], "Well-rated Thai street food on Rice Street, an easy stop on the way to or from the airport. Reviewers single out the pad Thai and fried rice.", "Pad Thai", "An older guide placed Anatta's in Kapaʻa. Check the current spot before you go.", 6);
+  T("f-alisa", "ALISA Sushi & Thai Bistro", "Upstairs on Rice St, Līhuʻe", "lihue", "Sit-down Thai and sushi", 2, ["Lunch", "Dinner"], "A sit-down Thai and sushi bistro upstairs on Rice Street.", "Thai curry and sushi", "", 7);
+  T("f-koloathai", "Koloa Thai Bistro", "Old Kōloa Town", "south", "Thai restaurant with full bar", 2, ["Lunch", "Dinner", "Drinks"], "A Thai bistro in Old Kōloa Town with a full bar.", "Curry and a cocktail", "", 8);
+  T("f-anattas-poipu", "Anatta's Thai Street Food (Poʻipū)", "Poʻipū", "south", "Thai food truck", 1, ["Lunch", "Dinner"], "The Poʻipū Anatta's truck, a good stop after the beach.", "Pad Thai", "", 9);
+  T("f-bangkokhappy", "Bangkok Happy Bowl", "Poʻipū Rd, Kōloa", "south", "Thai restaurant", 2, ["Lunch", "Dinner", "Drinks"], "Thai food on Poʻipū Road with a patio and live music.", "Curry bowl on the patio", "It recently moved, and Google Maps sometimes sends people to the old spot. Check the address before you drive.", 10);
+  T("f-superhero-koloa", "Superhero Sushi & Thai (Kōloa)", "Kōloa", "south", "Thai and sushi truck", 1, ["Lunch", "Dinner"], "A Kōloa truck with picnic tables, serving Thai plates and sushi.", "Thai plate or sushi", "", 11);
+  T("f-lannathai", "Lanna Thai", "Kalāheo", "south", "Thai food truck", 1, ["Lunch", "Dinner"], "A Thai food truck in Kalāheo.", "Thai plate", "Open only Tuesday, Wednesday, Friday and Sunday.", 12);
+  T("f-alohathai", "Aloha Thai Kitchen", "Waimea", "west", "Thai restaurant", 2, ["Lunch", "Dinner"], "Run by owners from Northern Thailand; a good stop after Waimea Canyon.", "Northern Thai dishes", "Closed Saturdays.", 13);
+  T("f-thaismoothie", "The Thai & Smoothie Place", "Waimea", "west", "Thai plates and smoothies", 1, ["Breakfast", "Lunch", "Dinner"], "Thai plates and fruit smoothies, open from 7 AM, so it works before an early canyon drive.", "Thai plate and a fruit smoothie", "Opens at 7 AM.", 14);
+  T("f-lotusgarden", "Lotus Garden Chinese & Thai", "Princeville", "north", "Chinese and Thai restaurant", 2, ["Lunch", "Dinner"], "A Chinese and Thai restaurant on the north shore, open daily until 9 PM, later than most up there.", "Thai curry or Chinese plate", "Open daily until 9 PM.", 15);
+  T("f-superhero-princeville", "SuperHero Sushi & Thai (Princeville)", "Princeville", "north", "Thai and sushi truck", 1, ["Lunch", "Dinner"], "The Princeville SuperHero truck, serving Thai plates and sushi.", "Thai plate or sushi", "Closed Mondays.", 16);
+  T("f-thaielephant", "Thai Elephant", "Hanalei food truck lot", "north", "Thai food truck", 1, ["Lunch", "Dinner"], "A Thai truck in the Hanalei food truck lot.", "Thai plate", "Open Wednesday to Sunday; closes at 6 PM.", 17);
+})();

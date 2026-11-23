@@ -39,7 +39,7 @@ All content lives in `js/data.js`.
 - **13 food places were added from research** (Hawaii Magazine readers' polls, Honolulu Magazine, Frommer's,
   Food Network, travel guides; see `js/food-extra.js`). They cite their sources on the page but haven't been checked
   against official websites yet. Reddit couldn't be searched with the tools used.
-- **Kauaʻi has 88 food listings.** About 60 were added from area round-ups and topic guides (breakfast,
+- **Kauaʻi has 105 food listings.** About 60 were added from area round-ups and topic guides (breakfast,
   plate lunch, bars, burgers, tacos, sushi, food trucks); each cites the guide it came from. They are search-based
   and haven't been checked against official websites.
 - **Food photos** in `images/food/` are from Wikimedia Commons; author and license for each are in `HWP.photos`
