@@ -140,7 +140,7 @@
   }
   V.brief = {
     title: 'Weekly brief',
-    header: function () { return { title: 'Weekly brief', actions: '<button class="btn hide-sm" data-act="print">' + I('print') + 'Print</button><button class="btn" data-act="brief-md">' + I('download') + 'Download</button><button class="btn primary" data-act="brief-copy">' + I('copy') + 'Copy client summary</button>' }; },
+    header: function () { return { title: 'Weekly brief', actions: (App.hosted ? '' : '<button class="btn hide-sm" data-act="print">' + I('print') + 'Print</button>') + '<button class="btn" data-act="brief-md">' + I('download') + 'Download</button><button class="btn primary" data-act="brief-copy">' + I('copy') + 'Copy client summary</button>' }; },
     render: function () {
       var t = S.t, p = period(), cid = S.ui.bc || '';
       var f = { from: p.from, to: p.to, campaignId: cid || null };

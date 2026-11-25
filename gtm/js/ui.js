@@ -131,7 +131,24 @@
   };
 
   /* ---------- files ---------- */
+  // Inside a claude.ai artifact, plain download links are blocked; the platform's "downloads" capability saves files instead.
+  App.hosted = !!(window.claude && window.claude.use);
+  var dlCap = null;
+  if (App.hosted) { try { window.claude.use('downloads').then(function (d) { dlCap = d; }, function () { }); } catch (e) { } }
+  function showText(name, text) {
+    App.modal({ title: name, sub: 'Saving files is not available here. Copy the contents instead.', wide: true, body: '<textarea readonly rows="14" style="font:12px/1.5 var(--mono)">' + esc(text) + '</textarea>', actions: [{ label: 'Close', cls: 'ghost' }, { label: 'Copy', cls: 'primary', icon: 'copy', onClick: function () { App.copy(text, 'Copied'); } }] });
+  }
   App.download = function (name, text, mime) {
+    if (App.hosted) {
+      if (!dlCap) { showText(name, text); return; }
+      dlCap.save({ filename: name, data: text }).then(function () { App.toast('Saved ' + name); }, function (err) {
+        var c = err && err.code;
+        if (c === 'declined') return;
+        if (c === 'rate_limited') { App.toast('Another save is still open. Try again in a moment.', 'bad'); return; }
+        showText(name, text);
+      });
+      return;
+    }
     var blob = new Blob([text], { type: mime || 'text/csv;charset=utf-8' });
     var a = document.createElement('a');
     a.href = URL.createObjectURL(blob); a.download = name;
