@@ -1,0 +1,818 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>UCLA 3rd &amp; 6, 2OT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: film-room page. Scoreboard strip, then a full-width 3D stage with HUD, controls, then model results and assumptions. Single dark look on purpose (film room). */
+:root {
+  --bg: #0e1319;
+  --panel: #161d26;
+  --line: #26303c;
+  --ink: #e9edf2;
+  --muted: #8f9cab;
+  --ucla: #4a8cf0;
+  --run: #f2a541;
+  --sticks: #ffd23f;
+  --good: #4cc38a;
+  --warn: #f2a541;
+  --bad: #ef5b5b;
+  --f-display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --f-body: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+html, body { background: var(--bg); color: var(--ink); }
+body { font-family: var(--f-body); font-size: 15px; line-height: 1.55; }
+.wrap {
+  max-width: 1180px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 20px 56px;
+  display: flex; flex-direction: column; gap: 22px;
+}
+.score {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px;
+  font-family: var(--f-display); font-weight: 600; letter-spacing: .04em; text-transform: uppercase;
+  font-size: 15px; color: var(--muted);
+}
+.score .box { display: flex; align-items: stretch; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+.score .box span { padding: 4px 10px; display: flex; align-items: center; gap: 8px; }
+.score .team-u { background: #1d3f73; color: #fff; }
+.score .team-m { background: #0b2346; color: #ffcb05; }
+.score .num { font-family: var(--f-mono); font-size: 15px; }
+.score .sit { background: var(--panel); color: var(--ink); }
+h1 {
+  font-family: var(--f-display); font-weight: 700; font-size: clamp(30px, 5.2vw, 52px);
+  line-height: 1.02; margin: 0; letter-spacing: .005em; text-wrap: balance;
+}
+.lede { margin: 8px 0 0; color: var(--muted); max-width: 68ch; }
+.lede b { color: var(--ink); font-weight: 600; }
+
+.stage {
+  position: relative; width: 100%; border-radius: 10px; overflow: hidden;
+  border: 1px solid var(--line); background: #0a0f14;
+  height: clamp(300px, 58vw, 640px);
+}
+.stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
+.hud {
+  position: absolute; left: 12px; top: 12px; right: 12px; pointer-events: none;
+  display: flex; justify-content: space-between; align-items: flex-start; gap: 10px; flex-wrap: wrap;
+}
+.hud .card {
+  background: rgba(10, 15, 20, .78); border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px; padding: 8px 11px; font-size: 12.5px; line-height: 1.45;
+  backdrop-filter: blur(4px); max-width: 340px;
+}
+.hud .clock { font-family: var(--f-mono); font-size: 13px; }
+.hud .k { color: var(--muted); }
+.hud .v { font-family: var(--f-mono); }
+.hud .status { font-family: var(--f-display); font-size: 18px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+.tag {
+  position: absolute; transform: translate(-50%, -100%); pointer-events: none;
+  font-family: var(--f-display); font-weight: 700; font-size: 14px; letter-spacing: .05em; text-transform: uppercase;
+  padding: 2px 8px; border-radius: 4px; white-space: nowrap; color: #08120c;
+}
+.tag.sticks { background: var(--sticks); color: #1b1600; }
+.view-label {
+  position: absolute; left: 12px; bottom: 12px; pointer-events: none;
+  font-family: var(--f-display); font-size: 13px; letter-spacing: .12em; text-transform: uppercase; color: rgba(255,255,255,.7);
+}
+
+.controls { display: flex; flex-direction: column; gap: 12px; }
+.row { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; }
+.group { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.group .lbl { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .1em; font-size: 13px; color: var(--muted); margin-right: 4px; }
+button.chip {
+  font: 500 13.5px/1 var(--f-body); color: var(--ink); background: var(--panel);
+  border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; cursor: pointer;
+}
+button.chip:hover { border-color: #3a4757; }
+button.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+button.chip.throw[aria-pressed="true"] { background: var(--ucla); border-color: var(--ucla); color: #fff; }
+button.chip.run[aria-pressed="true"] { background: var(--run); border-color: var(--run); color: #1a1000; }
+button:focus-visible, input:focus-visible { outline: 2px solid var(--sticks); outline-offset: 2px; }
+.play { width: 44px; height: 44px; border-radius: 50%; border: 0; background: var(--ink); color: var(--bg); cursor: pointer; font-size: 16px; flex: none; }
+.scrub { flex: 1 1 260px; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.scrub input { flex: 1; min-width: 0; accent-color: var(--sticks); }
+.mono { font-family: var(--f-mono); font-size: 13px; color: var(--muted); }
+.slider { display: flex; align-items: center; gap: 10px; flex: 1 1 320px; min-width: 0; }
+.slider input { flex: 1; min-width: 0; accent-color: var(--ucla); }
+label.check { display: flex; gap: 6px; align-items: center; font-size: 13.5px; color: var(--muted); cursor: pointer; }
+
+h2 { font-family: var(--f-display); font-size: 28px; font-weight: 700; margin: 0; letter-spacing: .01em; text-wrap: balance; }
+.section { display: flex; flex-direction: column; gap: 14px; }
+.section > p { margin: 0; color: var(--muted); max-width: 72ch; }
+.results { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 760px) { .results { grid-template-columns: 1fr; } }
+.res { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.res .t { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .08em; font-size: 14px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.res .t i { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.res .big { font-family: var(--f-display); font-weight: 700; font-size: 46px; line-height: 1; font-variant-numeric: tabular-nums; }
+.res .sub { font-size: 13.5px; color: var(--muted); }
+.res .sub b { color: var(--ink); font-weight: 600; font-family: var(--f-mono); font-size: 13px; }
+.chart-wrap { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 12px; overflow-x: auto; }
+.chart-wrap svg { display: block; width: 100%; min-width: 520px; height: auto; }
+.legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 13px; color: var(--muted); padding: 4px 6px 0; }
+.legend span { display: flex; align-items: center; gap: 6px; }
+.legend i { width: 18px; height: 3px; display: inline-block; border-radius: 2px; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 10px; }
+table { border-collapse: collapse; width: 100%; min-width: 560px; font-size: 13.5px; }
+th, td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-family: var(--f-display); text-transform: uppercase; letter-spacing: .08em; font-size: 13px; color: var(--muted); font-weight: 600; background: var(--panel); }
+tr:last-child td { border-bottom: 0; }
+td.num { font-family: var(--f-mono); white-space: nowrap; }
+.note { font-size: 13px; color: var(--muted); max-width: 80ch; margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
+</style>
+<style>html,body{margin:0}[hidden]{display:none!important}</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <div class="score">
+      <div class="box">
+        <span class="team-u">UCLA <span class="num">13</span></span>
+        <span class="sit">3rd &amp; 6 · 2nd OT · Ball at MICH 21</span>
+        <span class="team-m"><span class="num">16</span> MICH</span>
+      </div>
+      <span>Film room reconstruction</span>
+    </div>
+    <h1 style="margin-top:12px">Could the UCLA quarterback have moved the chains?</h1>
+    <p class="lede">The play rebuilt in 3D from the broadcast clip. Watch it through the eyes of <b>QB #10</b> as he escapes the pocket, with tight end <b>#89</b> drifting past the sticks. Then switch to the two options he didn't take, a throw to #89 or a run to the open far side. Each one is simulated a few thousand times to estimate how often it gets the first down.</p>
+  </header>
+
+  <div class="stage" id="stage">
+    <canvas id="gl" aria-label="3D reconstruction of the third-down play"></canvas>
+    <div class="hud">
+      <div class="card" id="hudL"></div>
+      <div class="card" id="hudR"></div>
+    </div>
+    <div class="tag" id="teTag" hidden></div>
+    <div class="tag sticks" id="stickTag" hidden>Line to gain</div>
+    <div class="view-label" id="viewLabel"></div>
+  </div>
+
+  <div class="controls">
+    <div class="row">
+      <button class="play" id="play" aria-label="Play">▶</button>
+      <div class="scrub">
+        <input type="range" id="time" min="0" max="7.5" step="0.01" value="4.0" aria-label="Time after snap">
+        <span class="mono" id="timeTxt">4.00 s</span>
+      </div>
+      <div class="group">
+        <span class="lbl">Speed</span>
+        <button class="chip" data-speed="0.25" aria-pressed="false">¼×</button>
+        <button class="chip" data-speed="0.5" aria-pressed="true">½×</button>
+        <button class="chip" data-speed="1" aria-pressed="false">1×</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="group" role="group" aria-label="Scenario">
+        <span class="lbl">Play</span>
+        <button class="chip" data-scn="actual" aria-pressed="true">What happened</button>
+        <button class="chip throw" data-scn="throw" aria-pressed="false">Throw to #89</button>
+        <button class="chip run" data-scn="run" aria-pressed="false">Run far side</button>
+      </div>
+      <div class="group" role="group" aria-label="Camera">
+        <span class="lbl">Camera</span>
+        <button class="chip" data-cam="qb" aria-pressed="true">QB's eyes</button>
+        <button class="chip" data-cam="behind" aria-pressed="false">Behind QB</button>
+        <button class="chip" data-cam="broadcast" aria-pressed="false">Broadcast</button>
+        <button class="chip" data-cam="overhead" aria-pressed="false">All-22</button>
+      </div>
+    </div>
+    <div class="row">
+      <div class="slider">
+        <span class="lbl" style="font-family:var(--f-display);text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--muted)">Decision at</span>
+        <input type="range" id="t0" min="3.0" max="5.0" step="0.05" value="4.0" aria-label="Decision time for the alternate play">
+        <span class="mono" id="t0Txt">4.00 s</span>
+      </div>
+      <label class="check"><input type="checkbox" id="reach"> Show defender reach</label>
+    </div>
+  </div>
+
+  <section class="section">
+    <h2 id="verdict">Running the model…</h2>
+    <div class="results">
+      <div class="res">
+        <div class="t"><i style="background:var(--ucla)"></i>Throw to #89</div>
+        <div class="big" id="rThrow">–</div>
+        <div class="sub" id="rThrowSub"></div>
+      </div>
+      <div class="res">
+        <div class="t"><i style="background:var(--run)"></i>Run far side</div>
+        <div class="big" id="rRun">–</div>
+        <div class="sub" id="rRunSub"></div>
+      </div>
+      <div class="res">
+        <div class="t"><i style="background:var(--muted)"></i>What happened</div>
+        <div class="big">0%</div>
+        <div class="sub">Tucked it up the middle at about <b>4.75 s</b>. Wrapped up by #18 and #8 at <b>MICH 20</b>, a gain of about 1 yard and <b>roughly 4.7 yards short</b>.</div>
+      </div>
+    </div>
+    <p class="note" id="mcNote"></p>
+  </section>
+
+  <section class="section">
+    <h2>When the window was open</h2>
+    <p>First-down rate for each option depending on when #10 makes his decision, measured in seconds after the snap. Each point is 600 simulated plays. The throw holds steady at around 80–86% for the whole window. The run line is jumpy because #8 is within arm's reach of him from about 4.1 to 4.6 s, and because whether the run gets there depends on beating the far-side safeties to the sticks by a fraction of a yard.</p>
+    <div class="chart-wrap"><svg id="chart" viewBox="0 0 720 280" role="img" aria-label="Conversion rate by decision time"></svg>
+      <div class="legend">
+        <span><i style="background:var(--ucla)"></i>Throw to #89</span>
+        <span><i style="background:var(--run)"></i>Run far side</span>
+        <span><i style="background:var(--sticks)"></i>Your decision point</span>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>How the model works</h2>
+    <p>Player paths come from frames of the broadcast every 0.25–0.5 s, measured against the yard lines and hash marks. From the decision point on, each defender keeps running his path from the film until he reacts. Then he chases the ball or the runner at his top speed and acceleration. A tackle happens when a defender gets within about a yard of the runner. Every input below varies a little in each simulation.</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Input</th><th>Value used</th><th>Where it comes from</th></tr></thead>
+        <tbody>
+          <tr><td>Line of scrimmage / line to gain</td><td class="num">MICH 21.5 / MICH 15.5</td><td>Blue and yellow broadcast lines against the 20 and 15</td></tr>
+          <tr><td>#89 at 4.0 s</td><td class="num">≈ MICH 15.5, 3–4 yd inside near hash</td><td>Released late after chipping, then settled past the sticks</td></tr>
+          <tr><td>Throw velocity</td><td class="num">21 ± 1.2 yd/s (≈ 43 mph)</td><td>Typical short touch throw on the move</td></tr>
+          <tr><td>Throw accuracy</td><td class="num">σ = 0.75 yd per axis</td><td>Off-platform throw. Catchable within about 1.4 yd</td></tr>
+          <tr><td>Defender reaction</td><td class="num">0.30–0.50 s ± 0.12</td><td>Time to read the throw or the cut</td></tr>
+          <tr><td>Top speed</td><td class="num">DB 7.6 · LB 7.0 · DL 6.0 yd/s</td><td>Typical Power-4 player speeds</td></tr>
+          <tr><td>QB scramble speed</td><td class="num">7.6 ± 0.4 yd/s</td><td>About a 4.7-second 40-yard dash, carrying the ball</td></tr>
+          <tr><td>Completion odds</td><td class="num">96% × closeness factor</td><td>Drops off sharply once a defender is inside about 1.3 yd at the catch</td></tr>
+          <tr><td>Spot uncertainty</td><td class="num">±0.8 yd per defender</td><td>Each defender's starting spot is jittered by about how precisely the film can be read</td></tr>
+          <tr><td>Missed tackle</td><td class="num">14%</td><td>A missed defender loses 0.7 s</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="note">These are estimates from a single high sideline angle. Spots are good to about ±1 yard. Players who were off screen (the far-side receivers and defensive backs, and the running back's route) are educated guesses, marked with a dimmer number. The run model doesn't give the QB any blockers, so it leans conservative.</p>
+  </section>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+(function () {
+"use strict";
+const LOS = 21.5, STICKS = 15.5, T_ACTUAL_END = 7.5;
+
+// ---------- Player paths reconstructed from the broadcast (x = yards to Michigan goal, z = yards from field center, + = near/camera side)
+function ol(num, z0) {
+  return { id: "u" + num, team: "U", num: String(num), keys: [[0,21.9,z0],[1.0,23.4,z0],[2.5,24.2,z0-0.3],[3.75,23.6,z0-0.8],[4.75,22.6,z0-1.6],[5.6,21.2,z0-2.0],[6.5,20.8,z0-2.0]] };
+}
+const PLAYERS = [
+  { id: "qb", team: "U", num: "10", keys: [[0,26.5,3.8],[0.6,27.6,4.0],[1.5,28.6,4.6],[2.25,27.8,3.6],[2.75,27.3,3.0],[3.25,27.0,2.6],[3.75,25.9,0.4],[4.25,24.8,-0.8],[4.75,24.0,-1.4],[5.2,22.2,-1.3],[5.55,20.7,-1.0],[5.8,20.3,-0.9],[6.4,20.2,-0.9]] },
+  { id: "te", team: "U", num: "89", keys: [[0,22.0,7.8],[1.0,21.7,8.2],[2.25,21.0,7.8],[2.75,18.6,7.0],[3.25,17.2,6.3],[3.75,15.9,4.0],[4.25,15.0,3.4],[4.75,14.4,3.0],[5.5,13.0,2.6],[6.3,11.9,2.8],[7.5,11.6,3.0]] },
+  ol(72, 6.6), ol(52, 5.2), ol(55, 3.8), ol(54, 2.4), ol(66, 1.0),
+  { id: "rb", team: "U", num: "RB", est: true, keys: [[0,26.5,1.6],[1.2,25.5,0.5],[2.5,23,-2.5],[4,19.5,-6.5],[5.5,17.5,-8],[7.5,17,-8]] },
+  { id: "wr1", team: "U", num: "WR", est: true, keys: [[0,21.9,19],[2,15,19.5],[3.5,9.5,18.5],[5,7,17],[7.5,6.5,16]] },
+  { id: "wr2", team: "U", num: "WR", est: true, keys: [[0,21.9,-11],[1.5,17,-11.5],[3,12.5,-13],[5,9,-14],[7.5,8.5,-13]] },
+  { id: "wr3", team: "U", num: "WR", est: true, keys: [[0,21.9,-20],[2,15,-20],[3.5,9,-19],[5.5,6,-17],[7.5,5.5,-16]] },
+
+  { id: "d18", team: "M", num: "18", vmax: 7.0, acc: 6.5, react: 0.35, keys: [[0,18.8,6.2],[1.0,20.0,6.8],[2.25,21.4,7.6],[3.25,21.0,7.4],[3.75,20.5,5.4],[4.25,19.3,3.4],[4.75,19.3,1.6],[5.3,20.0,-0.2],[5.65,20.3,-0.7],[6.4,20.4,-0.7]] },
+  { id: "d4", team: "M", num: "4", vmax: 7.7, acc: 7.0, react: 0.30, keys: [[0,8.8,7.4],[2,9.2,7.0],[4,10.0,6.4],[5.5,10.8,5.2],[6.5,11.0,4.0],[7.5,11.2,3.6]] },
+  { id: "d17", team: "M", num: "17", vmax: 6.2, acc: 5.0, react: 0.40, keys: [[0,22.3,4.8],[1.2,24.2,5.5],[2.25,25.2,4.6],[3.25,24.6,4.6],[3.75,22.1,6.4],[4.25,21.3,4.5],[5.0,20.6,1.5],[5.8,20.8,-0.4],[6.5,20.9,-0.5]] },
+  { id: "d91", team: "M", num: "91", vmax: 6.0, acc: 5.0, react: 0.40, keys: [[0,22.3,7.5],[1.5,24.0,9.5],[2.75,23.6,9.0],[3.25,23.1,9.5],[3.75,22.0,7.0],[4.5,21.0,4.0],[5.5,20.6,0.6],[6.2,20.7,-0.2],[7,20.8,-0.3]] },
+  { id: "d8", team: "M", num: "8", vmax: 6.6, acc: 5.5, react: 0.35, keys: [[0,22.3,-0.8],[1.5,24.5,-1.0],[3,25.5,0.5],[4.25,24.0,-0.2],[5.0,22.0,-1.2],[5.6,20.6,-1.0],[6.4,20.4,-1.0]] },
+  { id: "dl", team: "M", num: "DL", est: true, vmax: 5.6, acc: 4.5, react: 0.50, keys: [[0,22.3,2.2],[1.5,23.6,2.4],[3,24.2,1.8],[4.5,23.6,0.6],[5.6,21.8,-0.4],[6.5,21.3,-0.6]] },
+  { id: "lb", team: "M", num: "LB", est: true, vmax: 7.0, acc: 6.5, react: 0.35, keys: [[0,17.1,-1.2],[1.5,14.5,-3],[3,11.5,-4],[4.5,10,-4.5],[5.5,11.5,-3.5],[6.5,14.5,-2]] },
+  { id: "nb", team: "M", num: "DB", est: true, vmax: 7.4, acc: 7.0, react: 0.35, keys: [[0,18,-8.4],[1.5,14.5,-11],[3,11,-13],[4.5,10,-13.5],[6,11.5,-11],[7.5,13,-9]] },
+  { id: "cbn", team: "M", num: "CB", est: true, vmax: 7.6, acc: 7.0, react: 0.45, keys: [[0,13,16.5],[2,11,18.5],[3.5,9,18.5],[5,7.5,17],[7.5,7.5,15.5]] },
+  { id: "cbf", team: "M", num: "CB", est: true, vmax: 7.6, acc: 7.0, react: 0.50, keys: [[0,15,-20.5],[2,11,-20.5],[3.5,8.5,-19.5],[5.5,6.5,-17.5],[7.5,6.5,-16]] },
+  { id: "sf", team: "M", num: "S", est: true, vmax: 7.6, acc: 7.0, react: 0.35, keys: [[0,9,-5],[2,8,-8.5],[3.5,8.5,-10.5],[5,10,-9],[7.5,12,-6]] },
+];
+const BY = Object.fromEntries(PLAYERS.map(p => [p.id, p]));
+const QB = BY.qb, TE = BY.te;
+const DEF = PLAYERS.filter(p => p.team === "M");
+const ACTUAL_FALLS = { qb: 5.72, d18: 5.62, d8: 5.70 };
+
+function at(p, t) {
+  const k = p.keys;
+  if (t <= k[0][0]) return [k[0][1], k[0][2]];
+  for (let i = 1; i < k.length; i++) {
+    if (t <= k[i][0]) {
+      const a = k[i-1], b = k[i], s = (t - a[0]) / (b[0] - a[0]);
+      const e = s * s * (3 - 2 * s) * 0.35 + s * 0.65; // gentle easing between samples
+      return [a[1] + (b[1]-a[1]) * e, a[2] + (b[2]-a[2]) * e];
+    }
+  }
+  const l = k[k.length-1]; return [l[1], l[2]];
+}
+function vel(p, t) { const a = at(p, t - 0.05), b = at(p, t + 0.05); return [(b[0]-a[0]) / 0.1, (b[1]-a[1]) / 0.1]; }
+
+// ---------- Simulation
+function mulberry32(a) { return function () { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
+function gauss(r) { let u = 0, v = 0; while (u === 0) u = r(); v = r(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+const sig = x => 1 / (1 + Math.exp(-x));
+function steer(o, tx, tz, dt) {
+  let dx = tx - o.x, dz = tz - o.z; const d = Math.hypot(dx, dz) || 1;
+  const wx = dx / d * o.vmax, wz = dz / d * o.vmax;
+  let ax = wx - o.vx, az = wz - o.vz; const am = Math.hypot(ax, az), lim = o.acc * dt;
+  if (am > lim) { ax *= lim / am; az *= lim / am; }
+  o.vx += ax; o.vz += az;
+}
+
+function simulate(kind, t0, rng, record) {
+  const noisy = !!rng;
+  const N = (m, s) => noisy ? m + gauss(rng) * s : m;
+  const dt = 0.02;
+  const D = DEF.map(p => { const ox = N(0, 0.8), oz = N(0, 0.8), a = at(p, t0), v = vel(p, t0); return { p, ox, oz, x: a[0] + ox, z: a[1] + oz, vx: v[0], vz: v[1], vmax: Math.max(4.5, N(p.vmax, 0.35)), acc: p.acc, react: Math.max(0.12, N(p.react, 0.12)), stun: 0 }; });
+  const q0 = at(QB, t0);
+  const out = { kind, t0, frames: [], complete: null, converted: false, spot: null, catchX: null, catchT: null, tackleT: null, tackler: null, rel: null, arrive: null, endT: null, q0 };
+  let car = null, phase;
+  if (kind === "throw") {
+    const rel = t0 + Math.max(0.08, N(0.22, 0.06)), vb = N(21, 1.2);
+    let T = 0.6, cp = at(TE, rel + T);
+    for (let i = 0; i < 6; i++) { cp = at(TE, rel + T); T = Math.hypot(cp[0] - q0[0], cp[1] - q0[1]) / vb + 0.05; }
+    const ex = N(0, 0.75), ez = N(0, 0.75);
+    out.rel = rel; out.arrive = rel + T; out.ballTo = [cp[0] + ex, cp[1] + ez]; out.err = Math.hypot(ex, ez);
+    phase = "pre";
+  } else {
+    const v = vel(QB, t0);
+    car = { x: q0[0], z: q0[1], vx: v[0], vz: v[1], vmax: Math.max(6, N(7.6, 0.4)), acc: 5.5, who: "qb" };
+    phase = "run";
+  }
+  let t = t0, step = 0;
+  while (t < t0 + 5) {
+    if (phase === "pre" || phase === "air") {
+      if (t >= out.rel) phase = "air";
+      if (t >= out.arrive) {
+        let dmin = 1e9;
+        for (const d of D) dmin = Math.min(dmin, Math.hypot(d.x - out.ballTo[0], d.z - out.ballTo[1]));
+        const e = out.err, acc = e < 1.4 ? 1 : e < 2.2 ? 0.45 : 0.08;
+        const pc = 0.96 * sig((dmin - 1.3) / 0.4) * acc;
+        out.pComp = pc; out.dmin = dmin;
+        const comp = noisy ? rng() < pc : pc >= 0.5;
+        out.complete = comp; out.catchT = t;
+        if (!comp) { out.spot = LOS; out.endT = t; phase = "done"; }
+        else {
+          const v = vel(TE, t);
+          car = { x: out.ballTo[0], z: out.ballTo[1], vx: v[0], vz: v[1], vmax: Math.max(5.5, N(7.0, 0.4)), acc: 4.5, who: "te" };
+          out.catchX = car.x; phase = "run";
+        }
+      }
+    }
+    if (phase === "run") {
+      let tx, tz;
+      if (car.who === "qb") { const laneZ = -9.5; tx = car.x > STICKS + 2 ? STICKS - 1 : car.x - 10; tz = laneZ; }
+      else { tx = car.x - 10; tz = car.z; }
+      let nd = null, ndd = 1e9;
+      for (const d of D) { if (d.stun > 0) continue; const dd = Math.hypot(d.x - car.x, d.z - car.z); if (dd < ndd && d.x < car.x + 1) { ndd = dd; nd = d; } }
+      if (nd && ndd < 5) tz += (car.z - nd.z > 0 ? 1 : -1) * 2.0 * (5 - ndd) / 5;
+      steer(car, tx, tz, dt);
+      car.x += car.vx * dt; car.z += car.vz * dt;
+      if (Math.abs(car.z) > 26.4) { out.oob = true; out.spot = car.x; out.endT = t; phase = "done"; }
+      else if (car.x <= 0) { out.td = true; out.spot = 0; out.endT = t; phase = "done"; }
+    } else if (phase === "done" && car) { car.vx *= 0.85; car.vz *= 0.85; car.x += car.vx * dt; car.z += car.vz * dt; }
+
+    for (const d of D) {
+      if (d.stun > 0) { d.stun -= dt; d.vx *= 0.9; d.vz *= 0.9; d.x += d.vx * dt; d.z += d.vz * dt; continue; }
+      const go = kind === "throw" ? out.rel + d.react : t0 + d.react;
+      if (t < go) { const a = at(d.p, t), v = vel(d.p, t); d.x = a[0] + d.ox; d.z = a[1] + d.oz; d.vx = v[0]; d.vz = v[1]; continue; }
+      let tg = null;
+      if (phase === "pre" || phase === "air") tg = { x: out.ballTo[0], z: out.ballTo[1], vx: 0, vz: 0 };
+      else if (phase === "run") tg = car;
+      if (!tg) { d.vx *= 0.92; d.vz *= 0.92; d.x += d.vx * dt; d.z += d.vz * dt; continue; }
+      const dist = Math.hypot(tg.x - d.x, tg.z - d.z), lead = Math.min(1.0, dist / d.vmax) * 0.8;
+      steer(d, tg.x + tg.vx * lead, tg.z + tg.vz * lead, dt);
+      d.x += d.vx * dt; d.z += d.vz * dt;
+    }
+    if (phase === "run") {
+      for (const d of D) {
+        if (d.stun > 0) continue;
+        if (car.who === "qb" && t < t0 + 0.35) continue; // he is already slipping the rush on tape
+        if (Math.hypot(d.x - car.x, d.z - car.z) < 0.95) {
+          if (noisy && rng() < 0.14) { d.stun = 0.7; continue; }
+          out.tackleT = t; out.tackler = d.p.id; out.spot = Math.max(0, car.x - Math.max(0, N(0.8, 0.3))); out.endT = t; phase = "done"; break;
+        }
+      }
+    }
+    if (record && step % 2 === 0) out.frames.push({ t, D: D.map(d => [d.x, d.z]), car: car ? [car.x, car.z] : null });
+    t += dt; step++;
+    if (phase === "done" && t > out.endT + 1.6) break;
+  }
+  if (out.spot == null) { out.spot = car ? car.x : LOS; out.endT = t; }
+  out.converted = out.complete !== false && out.spot <= STICKS;
+  return out;
+}
+
+function monteCarlo(kind, t0, n, seed) {
+  const r = mulberry32(seed); let conv = 0, comp = 0, spots = 0, catches = 0;
+  for (let i = 0; i < n; i++) {
+    const o = simulate(kind, t0, r, false);
+    if (o.converted) conv++;
+    if (o.complete) comp++;
+    if (o.complete !== false) { spots += o.spot; catches++; }
+  }
+  return { conv: conv / n, comp: comp / n, spot: catches ? spots / catches : null };
+}
+
+// ---------- Three.js scene
+const stage = document.getElementById("stage");
+const canvas = document.getElementById("gl");
+if (!window.THREE) { document.getElementById("hudL").textContent = "The 3D view couldn't load. The model results below still work."; }
+const hasGL = !!window.THREE;
+let renderer, scene, camera, meshes = {}, ballMesh, laneLine, reachDiscs = [];
+const SPR = [];
+
+function fieldTexture() {
+  const S = 20, W = 120 * S, H = Math.round(53.333 * S);
+  const c = document.createElement("canvas"); c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  const X = yd => (yd + 10) * S, Z = z => (z + 26.667) * S;
+  for (let i = 0; i < 24; i++) { g.fillStyle = i % 2 ? "#2d6a35" : "#29622f"; g.fillRect(i * 5 * S, 0, 5 * S, H); }
+  g.fillStyle = "#0b2346"; g.fillRect(0, 0, 10 * S, H);
+  g.fillStyle = "#1b3c6c"; g.fillRect(110 * S, 0, 10 * S, H);
+  g.fillStyle = "rgba(246,246,240,.92)";
+  for (let yd = 0; yd <= 100; yd += 5) g.fillRect(X(yd) - 2, 0, 4, H);
+  g.fillRect(0, 0, W, 8); g.fillRect(0, H - 8, W, 8); g.fillRect(0, 0, 8, H); g.fillRect(W - 8, 0, 8, H);
+  for (let yd = 1; yd < 100; yd++) {
+    if (yd % 5 === 0) continue;
+    for (const z of [-6.667, 6.667]) g.fillRect(X(yd) - 1.5, Z(z) - 0.33 * S, 3, 0.67 * S);
+    for (const z of [-25.9, 25.9]) g.fillRect(X(yd) - 1.5, Z(z) - 0.33 * S, 3, 0.67 * S);
+  }
+  g.font = `700 ${2.1 * S}px "Barlow Condensed", "Arial Narrow", Arial, sans-serif`;
+  g.textAlign = "center"; g.textBaseline = "middle";
+  for (let yd = 10; yd <= 90; yd += 10) {
+    const n = String(yd <= 50 ? yd : 100 - yd);
+    for (const side of [1, -1]) {
+      g.save(); g.translate(X(yd), Z(side * 17.5)); if (side < 0) g.rotate(Math.PI);
+      g.fillText(n[0], -0.95 * S, 0); g.fillText(n[1], 0.95 * S, 0);
+      g.restore();
+    }
+  }
+  const tex = new THREE.CanvasTexture(c);
+  tex.anisotropy = renderer.capabilities.getMaxAnisotropy();
+  return tex;
+}
+
+function numberSprite(p) {
+  const c = document.createElement("canvas"); c.width = 160; c.height = 80;
+  const g = c.getContext("2d");
+  const U = p.team === "U";
+  const r = 18, w = 150, h = 64, x = 5, y = 8;
+  g.beginPath(); g.moveTo(x + r, y); g.lineTo(x + w - r, y); g.quadraticCurveTo(x + w, y, x + w, y + r); g.lineTo(x + w, y + h - r); g.quadraticCurveTo(x + w, y + h, x + w - r, y + h); g.lineTo(x + r, y + h); g.quadraticCurveTo(x, y + h, x, y + h - r); g.lineTo(x, y + r); g.quadraticCurveTo(x, y, x + r, y); g.closePath();
+  g.fillStyle = U ? "#f5f7fa" : "#0b2346"; g.fill();
+  g.lineWidth = 4; g.strokeStyle = U ? "#2d68c4" : "#ffcb05"; g.stroke();
+  g.fillStyle = U ? "#2d68c4" : "#ffcb05";
+  g.font = `700 50px "Barlow Condensed", "Arial Narrow", Arial, sans-serif`; g.textAlign = "center"; g.textBaseline = "middle";
+  g.fillText(p.num, 80, 42);
+  const tex = new THREE.CanvasTexture(c);
+  const m = new THREE.SpriteMaterial({ map: tex, transparent: true, opacity: p.est ? 0.55 : 1, depthTest: false });
+  const s = new THREE.Sprite(m); s.renderOrder = 10;
+  return s;
+}
+
+function makePlayer(p) {
+  const U = p.team === "U";
+  const g = new THREE.Group(), inner = new THREE.Group(); g.add(inner);
+  const jersey = new THREE.MeshLambertMaterial({ color: U ? 0xf2f4f7 : 0x0d2a52 });
+  const pants = new THREE.MeshLambertMaterial({ color: U ? 0xc8a45a : 0xf2c200 });
+  const helm = new THREE.MeshLambertMaterial({ color: U ? 0xc8a45a : 0x0d2a52 });
+  const legs = new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.18, 0.95, 10), pants); legs.position.y = 0.475;
+  const torso = new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.26, 0.78, 12), jersey); torso.position.y = 1.33;
+  const pads = new THREE.Mesh(new THREE.BoxGeometry(0.86, 0.16, 0.42), jersey); pads.position.y = 1.66;
+  const head = new THREE.Mesh(new THREE.SphereGeometry(0.2, 16, 12), helm); head.position.y = 1.9;
+  const mask = new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.12, 0.06), new THREE.MeshLambertMaterial({ color: U ? 0x2d68c4 : 0xf2c200 })); mask.position.set(0, 1.86, 0.2);
+  inner.add(legs, torso, pads, head, mask);
+  const spr = numberSprite(p); spr.position.y = 2.6; g.add(spr);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.55, 0.7, 36), new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.9, side: THREE.DoubleSide }));
+  ring.rotation.x = -Math.PI / 2; ring.position.y = 0.03; ring.visible = p.id === "qb" || p.id === "te";
+  g.add(ring);
+  const shadow = new THREE.Mesh(new THREE.CircleGeometry(0.45, 20), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.25 }));
+  shadow.rotation.x = -Math.PI / 2; shadow.position.y = 0.02; g.add(shadow);
+  inner.rotation.order = "YXZ";
+  scene.add(g);
+  return { g, inner, spr, ring, face: U ? -Math.PI / 2 : Math.PI / 2, prev: null };
+}
+
+function initGL() {
+  renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0a0f14);
+  scene.fog = new THREE.Fog(0x0a0f14, 70, 170);
+  camera = new THREE.PerspectiveCamera(70, 1, 0.1, 400);
+  scene.add(new THREE.HemisphereLight(0xdfe8ff, 0x1d3320, 0.85));
+  const sun = new THREE.DirectionalLight(0xffffff, 0.75); sun.position.set(20, 60, 40); scene.add(sun);
+
+  const field = new THREE.Mesh(new THREE.PlaneGeometry(120, 53.333), new THREE.MeshLambertMaterial({ map: fieldTexture() }));
+  field.rotation.x = -Math.PI / 2; field.position.set(50, 0, 0); scene.add(field);
+  const apron = new THREE.Mesh(new THREE.PlaneGeometry(170, 90), new THREE.MeshLambertMaterial({ color: 0x1f4a26 }));
+  apron.rotation.x = -Math.PI / 2; apron.position.set(50, -0.02, 0); scene.add(apron);
+  // stands suggestion
+  const wallMat = new THREE.MeshLambertMaterial({ color: 0x141b24 });
+  for (const s of [-1, 1]) { const w = new THREE.Mesh(new THREE.BoxGeometry(170, 10, 1), wallMat); w.position.set(50, 4, s * 45); scene.add(w); }
+
+  function stripe(x, color, opacity) {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(0.28, 53.333), new THREE.MeshBasicMaterial({ color, transparent: true, opacity }));
+    m.rotation.x = -Math.PI / 2; m.position.set(x, 0.025, 0); scene.add(m);
+  }
+  stripe(LOS, 0x2f6fe0, 0.9); stripe(STICKS, 0xffd23f, 0.95);
+  for (const s of [-1, 1]) {
+    const pole = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 2.6, 8), new THREE.MeshBasicMaterial({ color: 0xff8a1f }));
+    pole.position.set(STICKS, 1.3, s * 28); scene.add(pole);
+    const flag = new THREE.Mesh(new THREE.BoxGeometry(0.1, 0.5, 0.5), new THREE.MeshBasicMaterial({ color: 0xff8a1f }));
+    flag.position.set(STICKS, 2.6, s * 28); scene.add(flag);
+  }
+
+  for (const p of PLAYERS) meshes[p.id] = makePlayer(p);
+  meshes.te.ring.material.color.set(0x4cc38a);
+  meshes.qb.ring.material.color.set(0x4a8cf0);
+
+  const bg = new THREE.SphereGeometry(0.14, 14, 10); bg.scale(1.6, 1, 1);
+  ballMesh = new THREE.Mesh(bg, new THREE.MeshLambertMaterial({ color: 0x7a3e1d }));
+  scene.add(ballMesh);
+
+  const lg = new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(), new THREE.Vector3(1, 0, 0)]);
+  laneLine = new THREE.Line(lg, new THREE.LineDashedMaterial({ color: 0x4cc38a, dashSize: 0.6, gapSize: 0.4, transparent: true, opacity: 0.9 }));
+  scene.add(laneLine);
+
+  for (const p of DEF) {
+    const r = Math.max(0, 0.7 - p.react) * p.vmax + 1.3;
+    const disc = new THREE.Mesh(new THREE.CircleGeometry(r, 40), new THREE.MeshBasicMaterial({ color: 0xffcb05, transparent: true, opacity: 0.16, depthWrite: false }));
+    disc.rotation.x = -Math.PI / 2; disc.position.y = 0.04; disc.visible = false; scene.add(disc);
+    reachDiscs.push({ p, disc });
+  }
+}
+
+// ---------- State
+const state = { t: 4.0, playing: false, speed: 0.5, scn: "actual", cam: "qb", t0: 4.0, reach: false, snapCam: true };
+let REC = { throw: null, run: null };
+function rebuildRecs() { REC.throw = simulate("throw", state.t0, null, true); REC.run = simulate("run", state.t0, null, true); }
+function endTime() {
+  if (state.scn === "actual") return T_ACTUAL_END;
+  const r = REC[state.scn]; return Math.min(state.t0 + 5, r.endT + 1.5);
+}
+function frameAt(rec, t) {
+  const f = rec.frames; if (!f.length) return null;
+  const i = (t - rec.t0) / 0.04; const a = Math.max(0, Math.min(f.length - 1, Math.floor(i))), b = Math.min(f.length - 1, a + 1), s = Math.max(0, Math.min(1, i - a));
+  const A = f[a], B = f[b];
+  return { D: A.D.map((p, k) => [p[0] + (B.D[k][0] - p[0]) * s, p[1] + (B.D[k][1] - p[1]) * s]), car: A.car && B.car ? [A.car[0] + (B.car[0] - A.car[0]) * s, A.car[1] + (B.car[1] - A.car[1]) * s] : (A.car || null) };
+}
+function posOf(p, t) {
+  const scn = state.scn;
+  if (scn === "actual" || t < state.t0) return at(p, t);
+  const rec = REC[scn], fr = frameAt(rec, t);
+  if (p.team === "M") { const k = DEF.indexOf(p); return fr ? fr.D[k] : at(p, t); }
+  if (scn === "throw") {
+    if (p.id === "qb") return rec.q0;
+    if (p.id === "te" && rec.catchT != null && t >= rec.catchT && rec.complete && fr && fr.car) return fr.car;
+    return at(p, t);
+  }
+  if (scn === "run" && p.id === "qb") return fr && fr.car ? fr.car : rec.q0;
+  return at(p, t);
+}
+function fallTime(id) {
+  if (state.scn === "actual") return ACTUAL_FALLS[id] ?? null;
+  const rec = REC[state.scn];
+  if (rec.tackleT == null) return null;
+  if (id === rec.tackler) return rec.tackleT;
+  if (state.scn === "run" && id === "qb") return rec.tackleT + 0.05;
+  if (state.scn === "throw" && id === "te") return rec.tackleT + 0.05;
+  return null;
+}
+function ballPos(t) {
+  const scn = state.scn;
+  const carrierHand = (pid) => { const q = posOf(BY[pid], t); const f = meshes[pid] ? meshes[pid].face : -Math.PI / 2; const ft = fallTime(pid); const down = ft != null && t > ft + 0.3; return [q[0] + Math.sin(f) * 0.35, down ? 0.25 : 1.25, q[1] + Math.cos(f) * 0.35]; };
+  if (scn === "throw" && t >= state.t0) {
+    const r = REC.throw;
+    if (t < r.rel) return carrierHand("qb");
+    if (t < r.arrive) {
+      const s = (t - r.rel) / (r.arrive - r.rel), T = r.arrive - r.rel;
+      const x = r.q0[0] + (r.ballTo[0] - r.q0[0]) * s, z = r.q0[1] + (r.ballTo[1] - r.q0[1]) * s;
+      return [x, 2.1 + (1.4 - 2.1) * s + 4 * (0.6 + T * 1.6) * s * (1 - s), z];
+    }
+    if (!r.complete) { const k = Math.min(1, (t - r.arrive) / 0.3); return [r.ballTo[0] - 0.8 * k, 1.4 - 1.25 * k, r.ballTo[1]]; }
+    return carrierHand("te");
+  }
+  return carrierHand("qb");
+}
+
+// ---------- Render loop
+const camPos = window.THREE ? new THREE.Vector3(30, 2, 4) : null, camLook = window.THREE ? new THREE.Vector3(10, 1, 0) : null;
+let lastTs = null;
+
+function resize() {
+  if (!hasGL) return;
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h, false); camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+
+function nearestDef(pos, t) {
+  let best = null, bd = 1e9;
+  for (const p of DEF) { const q = posOf(p, t); const d = Math.hypot(q[0] - pos[0], q[1] - pos[1]); if (d < bd) { bd = d; best = p; } }
+  return { p: best, d: bd };
+}
+
+function update(dtReal) {
+  if (state.playing) {
+    state.t += dtReal * state.speed;
+    if (state.t >= endTime()) { state.t = endTime(); setPlaying(false); }
+    syncTime();
+  }
+  const t = state.t;
+  if (!hasGL) { renderHud(t); return; }
+  for (const p of PLAYERS) {
+    const m = meshes[p.id], q = posOf(p, t), q2 = posOf(p, Math.max(0, t - 0.08));
+    const vx = (q[0] - q2[0]) / 0.08, vz = (q[1] - q2[1]) / 0.08, sp = Math.hypot(vx, vz);
+    m.g.position.set(q[0], 0, q[1]);
+    if (sp > 0.6) m.face = Math.atan2(vx, vz);
+    else if (t < 0.4) m.face = p.team === "U" ? -Math.PI / 2 : Math.PI / 2;
+    m.inner.rotation.y = m.face;
+    const ft = fallTime(p.id);
+    const fall = ft != null ? Math.max(0, Math.min(1, (t - ft) / 0.35)) : 0;
+    m.inner.rotation.x = fall > 0 ? fall * 1.4 : Math.min(0.22, sp * 0.03);
+    m.inner.position.y = fall > 0 ? -fall * 0.25 : 0;
+    const cd = camera.position.distanceTo(m.g.position);
+    m.g.visible = !(state.cam === "qb" && (p.id === "qb" || cd < 2.6));
+    const sc = Math.max(0.35, Math.min(3.2, cd * 0.045));
+    m.spr.visible = !(state.cam === "qb" && cd < 6);
+    m.spr.scale.set(sc, sc / 2, 1);
+    m.spr.position.y = fall > 0.5 ? 1.2 : 2.2 + sc * 0.25;
+  }
+  const b = ballPos(t); ballMesh.position.set(b[0], b[1], b[2]);
+  if (state.scn === "throw" && t >= REC.throw.rel && t < REC.throw.arrive) ballMesh.rotation.y = Math.atan2(REC.throw.ballTo[0] - REC.throw.q0[0], REC.throw.ballTo[1] - REC.throw.q0[1]) + Math.PI / 2;
+
+  // lane line QB -> TE while the window is relevant
+  const qb = posOf(QB, t), te = posOf(TE, t);
+  const nTE = nearestDef(te, t);
+  const laneOn = t > 2.6 && ((state.scn === "actual" && t < 5.5) || (state.scn === "throw" && t < (REC.throw.rel || 99)) || (state.scn === "run" && t < state.t0));
+  laneLine.visible = laneOn;
+  if (laneOn) {
+    const pts = laneLine.geometry.attributes.position;
+    pts.setXYZ(0, qb[0], 1.7, qb[1]); pts.setXYZ(1, te[0], 1.4, te[1]); pts.needsUpdate = true;
+    laneLine.computeLineDistances();
+    laneLine.material.color.set(nTE.d > 3 ? 0x4cc38a : nTE.d > 1.6 ? 0xf2a541 : 0xef5b5b);
+  }
+  for (const r of reachDiscs) { const q = posOf(r.p, t); r.disc.position.x = q[0]; r.disc.position.z = q[1]; r.disc.visible = state.reach; }
+
+  // camera
+  const tgtPos = new THREE.Vector3(), tgtLook = new THREE.Vector3();
+  let fov = 40;
+  const focus = state.scn === "throw" && t >= state.t0 && REC.throw.complete && t > REC.throw.arrive ? posOf(TE, t) : (state.scn === "throw" && t >= REC.throw.rel ? [b[0], b[2]] : qb);
+  if (state.cam === "qb") {
+    const ft = fallTime("qb"); const fall = ft != null ? Math.max(0, Math.min(1, (t - ft) / 0.35)) : 0;
+    const qf = meshes.qb.face;
+    const qbAlive = state.scn === "throw" ? qb : qb;
+    tgtPos.set(qbAlive[0] + Math.sin(qf) * 0.15, 1.95 - fall * 1.5, qbAlive[1] + Math.cos(qf) * 0.15);
+    if (state.scn === "throw" && t >= REC.throw.rel) tgtLook.set(b[0], b[1] * 0.6, b[2]);
+    else tgtLook.set(qb[0] - 20, 0.9, qb[1] + (te[1] - qb[1]) * 0.35);
+    fov = 72;
+  } else if (state.cam === "behind") {
+    tgtPos.set(qb[0] + 7.5, 3.4, qb[1] + 0.6); tgtLook.set(qb[0] - 12, 0.6, qb[1]); fov = 55;
+  } else if (state.cam === "broadcast") {
+    tgtPos.set(focus[0] + 2, 27, focus[1] * 0.3 + 46); tgtLook.set(focus[0] - 2, 0, focus[1] * 0.3); fov = 38;
+  } else {
+    tgtPos.set(focus[0] - 2, 52, 9); tgtLook.set(focus[0] - 2, 0, 0); fov = 45;
+  }
+  const k = state.snapCam ? 1 : 0.14;
+  camPos.lerp(tgtPos, k); camLook.lerp(tgtLook, k); state.snapCam = false;
+  if (Math.abs(camera.fov - fov) > 0.01) { camera.fov += (fov - camera.fov) * (k === 1 ? 1 : 0.15); camera.updateProjectionMatrix(); }
+  camera.position.copy(camPos); camera.lookAt(camLook);
+  renderer.render(scene, camera);
+
+  // screen tags
+  placeTag(document.getElementById("teTag"), new THREE.Vector3(te[0], 3.3, te[1]), true, () => {
+    const el = document.getElementById("teTag");
+    const open = nTE.d;
+    el.textContent = `#89 · ${open.toFixed(1)} yd open`;
+    el.style.background = open > 3 ? "var(--good)" : open > 1.6 ? "var(--warn)" : "var(--bad)";
+  });
+  placeTag(document.getElementById("stickTag"), new THREE.Vector3(STICKS, 0.2, Math.max(-20, Math.min(20, qb[1]))), state.cam !== "overhead");
+  renderHud(t, qb, te, nTE);
+}
+
+function placeTag(el, v, show, fill) {
+  if (!show) { el.hidden = true; return; }
+  const p = v.clone().project(camera);
+  if (p.z > 1 || p.x < -1.05 || p.x > 1.05 || p.y < -1.05 || p.y > 1.05) { el.hidden = true; return; }
+  el.hidden = false;
+  el.style.left = ((p.x + 1) / 2 * stage.clientWidth) + "px";
+  el.style.top = ((1 - p.y) / 2 * stage.clientHeight) + "px";
+  if (fill) fill();
+}
+
+function yl(x) { return x <= 50 ? `MICH ${x.toFixed(1)}` : `UCLA ${(100 - x).toFixed(1)}`; }
+function renderHud(t, qb, te, nTE) {
+  qb = qb || posOf(QB, t); te = te || posOf(TE, t); nTE = nTE || nearestDef(te, t);
+  const L = document.getElementById("hudL"), R = document.getElementById("hudR");
+  const past = STICKS - te[0];
+  L.innerHTML = `<div class="clock">${t.toFixed(2)} s after snap</div>
+    <div><span class="k">QB #10</span> <span class="v">${yl(qb[0])}</span> · <span class="v">${Math.max(0, qb[0] - STICKS).toFixed(1)}</span> <span class="k">yd to the sticks</span></div>
+    <div><span class="k">TE #89</span> <span class="v">${past >= 0 ? past.toFixed(1) + " yd past" : (-past).toFixed(1) + " yd short of"}</span> <span class="k">the sticks · nearest</span> <span class="v">#${nTE.p.num} ${nTE.d.toFixed(1)} yd</span></div>`;
+  let status = "", color = "var(--ink)", detail = "";
+  if (state.scn === "actual") {
+    if (t < 3.3) { status = "Pocket"; detail = "Pressure from #17 and #8 flushes him."; }
+    else if (t < 4.75) { status = "Escaping"; detail = "Eyes up. #89 is alone past the sticks."; }
+    else if (t < 5.7) { status = "Tucks and runs"; detail = "Middle lane. #18 and #8 closing."; color = "var(--warn)"; }
+    else { status = "Short"; detail = "Down at MICH 20.2, about 4.7 yd short."; color = "var(--bad)"; }
+  } else if (state.scn === "throw") {
+    const r = REC.throw;
+    if (t < state.t0) { status = "Same as tape"; detail = `Throw comes at ${state.t0.toFixed(2)} s.`; }
+    else if (t < r.rel) { status = "Sets and throws"; }
+    else if (t < r.arrive) { status = "Ball in the air"; detail = `${(r.arrive - r.rel).toFixed(2)} s flight · ${Math.hypot(r.ballTo[0] - r.q0[0], r.ballTo[1] - r.q0[1]).toFixed(1)} yd throw`; color = "var(--ucla)"; }
+    else if (!r.complete) { status = "Incomplete"; color = "var(--bad)"; }
+    else if (r.tackleT == null || t < r.tackleT) { status = r.catchX <= STICKS ? "Caught past the sticks" : "Caught"; detail = `Catch at ${yl(r.catchX)}`; color = "var(--good)"; }
+    else { status = r.converted ? "First down" : "Short"; color = r.converted ? "var(--good)" : "var(--bad)"; detail = `Caught at ${yl(r.catchX)}, down at ${yl(r.spot)}`; }
+  } else {
+    const r = REC.run;
+    if (t < state.t0) { status = "Same as tape"; detail = `He takes off at ${state.t0.toFixed(2)} s.`; }
+    else if (r.tackleT == null || t < r.tackleT) { status = "Running far side"; color = "var(--run)"; }
+    else { status = r.converted ? "First down" : "Short"; color = r.converted ? "var(--good)" : "var(--bad)"; detail = `Down at ${yl(r.spot)}${r.converted ? "" : `, ${(r.spot - STICKS).toFixed(1)} yd short`}`; }
+    if (r.oob && t >= r.endT) { status = r.converted ? "First down · out of bounds" : "Out of bounds, short"; }
+  }
+  R.innerHTML = `<div class="status" style="color:${color}">${status}</div>${detail ? `<div class="k">${detail}</div>` : ""}<div class="k" style="margin-top:2px">This view is one simulated outcome. The odds are below.</div>`;
+  document.getElementById("viewLabel").textContent = { qb: "QB #10's eyes", behind: "Behind the QB", broadcast: "Broadcast angle", overhead: "All-22" }[state.cam];
+}
+
+function loop(ts) {
+  const dt = lastTs == null ? 0 : Math.min(0.05, (ts - lastTs) / 1000); lastTs = ts;
+  update(dt);
+  requestAnimationFrame(loop);
+}
+
+// ---------- UI
+const timeEl = document.getElementById("time"), timeTxt = document.getElementById("timeTxt");
+function syncTime() { timeEl.max = endTime().toFixed(2); timeEl.value = state.t; timeTxt.textContent = state.t.toFixed(2) + " s"; }
+const playBtn = document.getElementById("play");
+function setPlaying(v) { state.playing = v; playBtn.textContent = v ? "❚❚" : "▶"; playBtn.setAttribute("aria-label", v ? "Pause" : "Play"); }
+playBtn.addEventListener("click", () => { if (!state.playing && state.t >= endTime() - 0.01) { state.t = 0; state.snapCam = true; } setPlaying(!state.playing); });
+timeEl.addEventListener("input", () => { state.t = parseFloat(timeEl.value); timeTxt.textContent = state.t.toFixed(2) + " s"; state.snapCam = true; });
+function press(sel, attr, val) { document.querySelectorAll(sel).forEach(b => b.setAttribute("aria-pressed", String(b.getAttribute(attr) === val))); }
+document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click", () => { state.speed = parseFloat(b.dataset.speed); press("[data-speed]", "data-speed", b.dataset.speed); }));
+document.querySelectorAll("[data-scn]").forEach(b => b.addEventListener("click", () => {
+  state.scn = b.dataset.scn; press("[data-scn]", "data-scn", state.scn);
+  state.t = state.scn === "actual" ? Math.min(state.t, T_ACTUAL_END) : Math.max(0, state.t0 - 1.0);
+  state.snapCam = true; syncTime();
+  setPlaying(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
+}));
+document.querySelectorAll("[data-cam]").forEach(b => b.addEventListener("click", () => { state.cam = b.dataset.cam; press("[data-cam]", "data-cam", state.cam); state.snapCam = true; }));
+document.getElementById("reach").addEventListener("change", e => { state.reach = e.target.checked; });
+const t0El = document.getElementById("t0"), t0Txt = document.getElementById("t0Txt");
+let mcTimer = null;
+t0El.addEventListener("input", () => {
+  state.t0 = parseFloat(t0El.value); t0Txt.textContent = state.t0.toFixed(2) + " s";
+  rebuildRecs(); if (state.t > endTime()) state.t = endTime(); syncTime(); drawChart();
+  clearTimeout(mcTimer); mcTimer = setTimeout(runMC, 180);
+});
+
+const pct = x => Math.round(x * 100) + "%";
+function runMC() {
+  const n = 2500;
+  const th = monteCarlo("throw", state.t0, n, 7), rn = monteCarlo("run", state.t0, n, 11);
+  document.getElementById("rThrow").textContent = pct(th.conv);
+  document.getElementById("rThrowSub").innerHTML = `Completed <b>${pct(th.comp)}</b> of the time. Average spot after a catch <b>${yl(th.spot)}</b>. Throw at <b>${state.t0.toFixed(2)} s</b>.`;
+  document.getElementById("rRun").textContent = pct(rn.conv);
+  document.getElementById("rRunSub").innerHTML = `Average spot <b>${yl(rn.spot)}</b> on a run that breaks toward the far hash at <b>${state.t0.toFixed(2)} s</b>.`;
+  const best = th.conv >= rn.conv ? `Throwing to #89 at ${state.t0.toFixed(2)} s converts about ${pct(th.conv)} of the time. Running converts about ${pct(rn.conv)}.` : `Running far side at ${state.t0.toFixed(2)} s converts about ${pct(rn.conv)} of the time. Throwing to #89 converts about ${pct(th.conv)}.`;
+  document.getElementById("verdict").textContent = best;
+  document.getElementById("mcNote").textContent = `${n.toLocaleString()} simulated plays per option. The 3D view above shows the single most likely version of each one.`;
+  window.__mc = { throw: th, run: rn, t0: state.t0 };
+}
+
+let CURVE = null;
+function computeCurve() {
+  CURVE = [];
+  for (let t0 = 3.0; t0 <= 5.0001; t0 += 0.25) CURVE.push({ t0, th: monteCarlo("throw", t0, 600, 3).conv, rn: monteCarlo("run", t0, 600, 5).conv });
+  window.__curve = CURVE;
+}
+function drawChart() {
+  const svg = document.getElementById("chart"); if (!CURVE) return;
+  const W = 720, H = 280, l = 54, r = 20, tp = 18, bt = 44;
+  const X = t => l + (t - 3) / 2 * (W - l - r), Y = v => tp + (1 - v) * (H - tp - bt);
+  let s = "";
+  for (let v = 0; v <= 1.0001; v += 0.25) s += `<line x1="${l}" x2="${W - r}" y1="${Y(v)}" y2="${Y(v)}" stroke="#26303c"/><text x="${l - 10}" y="${Y(v) + 4}" text-anchor="end" fill="#8f9cab" font-size="12" font-family="JetBrains Mono, monospace">${Math.round(v * 100)}%</text>`;
+  for (let t = 3; t <= 5.0001; t += 0.5) s += `<text x="${X(t)}" y="${H - bt + 20}" text-anchor="middle" fill="#8f9cab" font-size="12" font-family="JetBrains Mono, monospace">${t.toFixed(1)}s</text>`;
+  s += `<text x="${(l + W - r) / 2}" y="${H - 6}" text-anchor="middle" fill="#8f9cab" font-size="12" font-family="Inter, sans-serif">Decision time after the snap</text>`;
+  const xa = X(4.75);
+  s += `<line x1="${xa}" x2="${xa}" y1="${tp}" y2="${H - bt}" stroke="#8f9cab" stroke-dasharray="3 4"/><text x="${xa - 6}" y="${tp + 12}" text-anchor="end" fill="#8f9cab" font-size="12" font-family="Inter, sans-serif">He ran middle here</text>`;
+  const xd = X(state.t0);
+  s += `<line x1="${xd}" x2="${xd}" y1="${tp}" y2="${H - bt}" stroke="#ffd23f" stroke-width="1.5"/>`;
+  const path = key => CURVE.map((c, i) => `${i ? "L" : "M"}${X(c.t0).toFixed(1)},${Y(c[key]).toFixed(1)}`).join("");
+  s += `<path d="${path("th")}" fill="none" stroke="#4a8cf0" stroke-width="3" stroke-linejoin="round"/>`;
+  s += `<path d="${path("rn")}" fill="none" stroke="#f2a541" stroke-width="3" stroke-linejoin="round"/>`;
+  for (const c of CURVE) s += `<circle cx="${X(c.t0)}" cy="${Y(c.th)}" r="3.5" fill="#4a8cf0"/><circle cx="${X(c.t0)}" cy="${Y(c.rn)}" r="3.5" fill="#f2a541"/>`;
+  svg.innerHTML = s;
+}
+
+function start() {
+  rebuildRecs();
+  if (hasGL) { initGL(); resize(); window.addEventListener("resize", resize); }
+  syncTime();
+  requestAnimationFrame(loop);
+  runMC();
+  setTimeout(() => { computeCurve(); drawChart(); }, 30);
+}
+(document.fonts && document.fonts.ready ? document.fonts.ready : Promise.resolve()).then(start, start);
+})();
+</script>
+
+</body>
+</html>
