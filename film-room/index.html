@@ -53,11 +53,17 @@ h1 {
 .lede { margin: 8px 0 0; color: var(--muted); max-width: 68ch; }
 .lede b { color: var(--ink); font-weight: 600; }
 
+.views { display: grid; grid-template-columns: minmax(0, 1.75fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+@media (max-width: 880px) { .views { grid-template-columns: minmax(0, 1fr); } }
 .stage {
   position: relative; width: 100%; border-radius: 10px; overflow: hidden;
   border: 1px solid var(--line); background: #0a0f14;
-  height: clamp(300px, 58vw, 640px);
+  height: clamp(300px, 40vw, 560px);
 }
+@media (max-width: 880px) { .stage { height: clamp(300px, 62vw, 520px); } }
+.bcast { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.bcast video { width: 100%; aspect-ratio: 16 / 9; max-width: 100%; border-radius: 10px; border: 1px solid var(--line); background: #000; display: block; object-fit: cover; }
+.bcast figcaption { display: flex; justify-content: space-between; gap: 8px; font-family: var(--f-display); text-transform: uppercase; letter-spacing: .1em; font-size: 13px; color: var(--muted); }
 .stage canvas { display: block; width: 100%; height: 100%; touch-action: none; }
 .hud {
   position: absolute; left: 12px; top: 12px; right: 12px; pointer-events: none;
@@ -66,7 +72,7 @@ h1 {
 .hud .card {
   background: rgba(10, 15, 20, .78); border: 1px solid rgba(255,255,255,.08);
   border-radius: 8px; padding: 8px 11px; font-size: 12.5px; line-height: 1.45;
-  backdrop-filter: blur(4px); max-width: 340px;
+  backdrop-filter: blur(4px); max-width: min(300px, 46%);
 }
 .hud .clock { font-family: var(--f-mono); font-size: 13px; }
 .hud .k { color: var(--muted); }
@@ -151,9 +157,10 @@ td.num { font-family: var(--f-mono); white-space: nowrap; }
       <span>Film room reconstruction</span>
     </div>
     <h1 style="margin-top:12px">Could the UCLA quarterback have moved the chains?</h1>
-    <p class="lede">The play rebuilt in 3D from the broadcast clip. Watch it through the eyes of <b>QB #10</b> as he escapes the pocket, with tight end <b>#89</b> drifting past the sticks. Then switch to the two options he didn't take, a throw to #89 or turning upfield and running instead of drifting sideways. Each one is simulated a few thousand times to estimate how often it gets the first down.</p>
+    <p class="lede">The play rebuilt in 3D from the broadcast clip. Watch it through the eyes of <b>QB #10</b> as he escapes the pocket, with tight end <b>#89</b> drifting past the sticks. The real broadcast plays beside it on the same clock, with its audio. Then switch to the two options he didn't take, a throw to #89 or turning upfield and running instead of drifting sideways. Each one is simulated a few thousand times to estimate how often it gets the first down.</p>
   </header>
 
+  <div class="views">
   <div class="stage" id="stage">
     <canvas id="gl" aria-label="3D reconstruction of the third-down play"></canvas>
     <div class="hud">
@@ -165,12 +172,17 @@ td.num { font-family: var(--f-mono); white-space: nowrap; }
     <div class="view-label" id="viewLabel"></div>
     <div class="key"><span><i style="background:#86bdf0"></i>UCLA offense</span><span><i style="background:#0b2346;box-shadow:inset 0 0 0 2px #ffcb05"></i>Michigan defense</span></div>
   </div>
+  <figure class="bcast">
+    <video id="bc" src="broadcast.mp4" playsinline preload="auto"></video>
+    <figcaption><span>Real broadcast</span><span class="mono" id="bcTime">synced</span></figcaption>
+  </figure>
+  </div>
 
   <div class="controls">
     <div class="row">
       <button class="play" id="play" aria-label="Play">▶</button>
       <div class="scrub">
-        <input type="range" id="time" min="0" max="7.5" step="0.01" value="4.0" aria-label="Time after snap">
+        <input type="range" id="time" min="-2.5" max="7.5" step="0.01" value="4.0" aria-label="Time after snap">
         <span class="mono" id="timeTxt">4.00 s</span>
       </div>
       <div class="group">
@@ -178,6 +190,10 @@ td.num { font-family: var(--f-mono); white-space: nowrap; }
         <button class="chip" data-speed="0.25" aria-pressed="false">¼×</button>
         <button class="chip" data-speed="0.5" aria-pressed="true">½×</button>
         <button class="chip" data-speed="1" aria-pressed="false">1×</button>
+      </div>
+      <div class="group">
+        <span class="lbl">Sound</span>
+        <button class="chip" id="sound" aria-pressed="true">On</button>
       </div>
     </div>
     <div class="row">
@@ -231,6 +247,7 @@ td.num { font-family: var(--f-mono); white-space: nowrap; }
       </div>
     </div>
     <p class="note" id="mcNote"></p>
+    <p class="note">The 3D view of each alternate play shows its single most likely outcome. The percentages come from the full simulation.</p>
   </section>
 
   <section class="section">
@@ -289,7 +306,10 @@ function ol(num, z0) {
 const PLAYERS = [
   { id: "qb", team: "U", num: "10", keys: [[0,26.2,6.0],[0.5,26.6,6.1],[1.5,28.9,6.8],[3.0,27.7,6.2],[3.75,26.0,3.1],[4.25,24.7,0.1],[4.75,23.4,-4.1],[5.25,23.1,-6.4],[5.75,22.5,-9.8],[6.15,21.6,-11.2],[6.3,21.3,-11.7],[7,21.3,-11.8]] },
   { id: "te", team: "U", num: "89", keys: [[0,22.9,13.2],[0.5,23.0,13.4],[1.5,22.0,13.0],[2.25,20.6,12.4],[3.0,18.5,10.8],[3.75,16.5,6.4],[4.25,15.8,2.9],[4.75,15.4,-0.8],[5.25,14.6,-4.6],[5.75,14.2,-8.3],[6.25,13.4,-11.9],[7.5,13.2,-13]] },
-  ol(72, 9.2), ol(52, 7.9), ol(55, 6.6), ol(54, 5.3), ol(66, 4.0),
+  ol(72, 9.2),
+  { id: "u52", team: "U", num: "52", keys: [[0,21.9,7.9],[1.5,25.0,3.9],[3.0,29.8,3.0],[4.25,29.5,3.6],[4.75,27.5,2.5],[5.25,25.3,1.1],[5.75,24.4,-1.3],[6.25,23.1,-3.6],[7,22.6,-4.5]] }, // measured: one of two blockers on #8
+  ol(55, 6.6), ol(54, 5.3),
+  { id: "u66", team: "U", num: "66", keys: [[0,21.9,4.0],[1.5,27.0,3.5],[3.0,31.1,4.2],[4.25,31.0,4.6],[5.0,29.5,3.0],[6.0,27.5,0.0],[7,26.5,-1.0]] }, // measured: second blocker on #8,
   { id: "rb", team: "U", num: "RB", est: true, keys: [[0,26.4,8.0],[1.2,25.5,9.5],[2.5,23.5,11.5],[4,21,8],[5.5,20,3],[7.5,19.5,1]] },
   { id: "wr1", team: "U", num: "WR", est: true, keys: [[0,22.0,16.2],[1.5,17.9,16.7],[3.5,11,17.5],[5,8,16.5],[7.5,7.5,14.5]] },
   { id: "wr2", team: "U", num: "WR", est: true, keys: [[0,23.0,-7.5],[1.5,18,-9],[3,13,-12],[5,9,-14],[7.5,8.5,-14]] },
@@ -299,7 +319,7 @@ const PLAYERS = [
   { id: "d4", team: "M", num: "4", vmax: 7.7, acc: 7.0, react: 0.30, keys: [[0,8.5,9.4],[0.5,8.6,9.3],[2.5,9.5,7.0],[4.0,11.0,3.5],[5.25,11.8,0.6],[5.75,11.9,-2.7],[6.25,11.4,-6.7],[7.5,11.2,-8.8]] },
   { id: "d17", team: "M", num: "17", vmax: 6.2, acc: 5.0, react: 0.40, keys: [[0,21.2,4.2],[1.5,23.5,5.0],[3.0,24.2,7.0],[3.75,22.3,8.1],[4.25,20.5,6.9],[5.0,20.8,3.0],[5.75,21.0,-3.0],[6.5,21.4,-8.5],[7.2,21.5,-9.5]] },
   { id: "d91", team: "M", num: "91", vmax: 6.0, acc: 5.0, react: 0.40, keys: [[0,21.0,7.5],[1.5,23.0,11.0],[3.0,23.8,14.3],[3.75,22.6,11.5],[4.5,21.6,7.0],[5.5,21.4,1.0],[6.4,21.6,-6.5],[7.2,21.7,-7.5]] },
-  { id: "d8", team: "M", num: "8", vmax: 6.6, acc: 5.5, react: 0.35, keys: [[0,21.9,-0.9],[1.5,25.5,2.0],[3.0,32.0,3.9],[4.25,28.5,0.5],[5.25,25.5,-4.0],[6.25,23.1,-7.7],[6.6,22.0,-10.5],[7.2,21.6,-11.4]] },
+  { id: "d8", team: "M", num: "8", vmax: 6.6, acc: 5.5, react: 0.35, keys: [[0,21.9,-0.9],[1.5,26.3,1.0],[3.0,32.1,4.2],[4.25,32.1,3.2],[5.25,27.5,-2.5],[6.25,23.1,-7.7],[6.6,22.0,-10.5],[7.2,21.6,-11.4]] },
   { id: "dl", team: "M", num: "DL", est: true, vmax: 5.6, acc: 4.5, react: 0.50, keys: [[0,20.6,3.8],[1.5,22.6,4.0],[3,23.4,3.2],[4.5,23.2,1.0],[5.6,22.6,-3.5],[6.5,22.2,-7.5],[7.2,22.0,-8.0]] },
   { id: "lb", team: "M", num: "LB", est: true, vmax: 7.0, acc: 6.5, react: 0.35, keys: [[0,16.5,2.5],[1.5,14.0,2.0],[3,11.0,1.5],[4.5,7.5,1.0],[5.5,6.8,0.0],[6.5,7.5,-2.5]] },
   { id: "nb", team: "M", num: "DB", est: true, vmax: 7.4, acc: 7.0, react: 0.35, keys: [[0,16.7,-6.5],[1.5,13.5,-9.5],[3,10,-12],[4.5,7.5,-13],[6,7,-12.5],[7.5,7.5,-12]] },
@@ -803,7 +823,8 @@ function initGL() {
 
 // ---------- State
 const KEY_IDS = new Set(["qb", "te", "d18", "d4", "d8"]);
-const state = { labels: "key", t: 4.0, playing: false, speed: 0.5, scn: "actual", cam: "qb", t0: 4.0, reach: false, snapCam: true };
+const BC_OFFSET = 2.85; // broadcast clip time = play clock + offset (snap at 2.85 s in the clip)
+const state = { sound: true, labels: "key", t: 4.0, playing: false, speed: 0.5, scn: "actual", cam: "qb", t0: 4.0, reach: false, snapCam: true };
 let REC = { throw: null, run: null };
 function rebuildRecs() { REC.throw = simulate("throw", state.t0, null, true); REC.run = simulate("run", state.t0, null, true); }
 function endTime() {
@@ -873,7 +894,9 @@ function nearestDef(pos, t) {
 
 function update(dtReal) {
   if (state.playing) {
-    state.t += dtReal * state.speed;
+    const bt = bc.currentTime - BC_OFFSET;
+    if (!bc.paused && !bc.ended && bc.readyState >= 2 && bt > -2.6 && Math.abs(bt - state.t) < 0.6) state.t = bt;
+    else state.t += dtReal * state.speed;
     if (state.t >= endTime()) { state.t = endTime(); setPlaying(false); }
     syncTime();
   }
@@ -971,12 +994,13 @@ function renderHud(t, qb, te, nTE) {
   qb = qb || posOf(QB, t); te = te || posOf(TE, t); nTE = nTE || nearestDef(te, t);
   const L = document.getElementById("hudL"), R = document.getElementById("hudR");
   const past = STICKS - te[0];
-  L.innerHTML = `<div class="clock">${t.toFixed(2)} s after snap</div>
+  L.innerHTML = `<div class="clock">${t < 0 ? (-t).toFixed(2) + " s before snap" : t.toFixed(2) + " s after snap"}</div>
     <div><span class="k">QB #10</span> <span class="v">${yl(qb[0])}</span> · <span class="v">${Math.max(0, qb[0] - STICKS).toFixed(1)}</span> <span class="k">yd to the sticks</span></div>
     <div><span class="k">TE #89</span> <span class="v">${past >= 0 ? past.toFixed(1) + " yd past" : (-past).toFixed(1) + " yd short of"}</span> <span class="k">the sticks · nearest</span> <span class="v">#${nTE.p.num} ${nTE.d.toFixed(1)} yd</span></div>`;
   let status = "", color = "var(--ink)", detail = "";
   if (state.scn === "actual") {
-    if (t < 3.3) { status = "Pocket"; detail = "Pressure from #17 and #8 flushes him."; }
+    if (t < 0) { status = "Pre-snap"; detail = "3rd & 6 from the Michigan 21. #89 is the wing on the near side."; }
+    else if (t < 3.3) { status = "Pocket"; detail = "Pressure from #17 and #8 flushes him."; }
     else if (t < 4.75) { status = "Escaping"; detail = "Eyes up. #89 is at the sticks about 10 yd in front of him. #18 is shadowing the QB about 4 yd underneath #89."; }
     else if (t < 6.3) { status = "Runs sideways"; detail = "He keeps drifting toward the far sideline. #18 mirrors him the whole way."; color = "var(--warn)"; }
     else { status = "No gain"; detail = "Down at about MICH 21.3, roughly 6 yd short. #89 is still 5 yd clear."; color = "var(--bad)"; }
@@ -995,7 +1019,7 @@ function renderHud(t, qb, te, nTE) {
     else { status = r.converted ? "First down" : "Short"; color = r.converted ? "var(--good)" : "var(--bad)"; detail = `Down at ${yl(r.spot)}${r.converted ? "" : `, ${(r.spot - STICKS).toFixed(1)} yd short`}`; }
     if (r.oob && t >= r.endT) { status = r.converted ? "First down · out of bounds" : "Out of bounds, short"; }
   }
-  R.innerHTML = `<div class="status" style="color:${color}">${status}</div>${detail ? `<div class="k">${detail}</div>` : ""}<div class="k" style="margin-top:2px">This view is one simulated outcome. The odds are below.</div>`;
+  R.innerHTML = `<div class="status" style="color:${color}">${status}</div>${detail ? `<div class="k">${detail}</div>` : ""}`;
   document.getElementById("viewLabel").textContent = { qb: "QB #10's eyes", behind: "Behind the QB", broadcast: "Broadcast angle", overhead: "All-22" }[state.cam];
 }
 
@@ -1008,15 +1032,29 @@ function loop(ts) {
 // ---------- UI
 const timeEl = document.getElementById("time"), timeTxt = document.getElementById("timeTxt");
 function syncTime() { timeEl.max = endTime().toFixed(2); timeEl.value = state.t; timeTxt.textContent = state.t.toFixed(2) + " s"; }
+const bc = document.getElementById("bc");
+function seekBroadcast() {
+  const vt = state.t + BC_OFFSET;
+  if (bc.readyState >= 1 && isFinite(bc.duration)) { try { bc.currentTime = Math.max(0, Math.min(bc.duration - 0.05, vt)); } catch (e) {} }
+  document.getElementById("bcTime").textContent = state.t < 0 ? `${(-state.t).toFixed(1)} s before snap` : `${state.t.toFixed(2)} s after snap`;
+}
+function driveBroadcast() {
+  bc.muted = !state.sound;
+  try { bc.playbackRate = state.speed; bc.preservesPitch = true; } catch (e) {}
+  if (state.playing) { seekBroadcast(); const pr = bc.play(); if (pr && pr.catch) pr.catch(() => { bc.muted = true; bc.play().catch(() => {}); }); }
+  else { bc.pause(); seekBroadcast(); }
+}
+bc.addEventListener("loadedmetadata", seekBroadcast);
 const playBtn = document.getElementById("play");
-function setPlaying(v) { state.playing = v; playBtn.textContent = v ? "❚❚" : "▶"; playBtn.setAttribute("aria-label", v ? "Pause" : "Play"); }
-playBtn.addEventListener("click", () => { if (!state.playing && state.t >= endTime() - 0.01) { state.t = 0; state.snapCam = true; } setPlaying(!state.playing); });
-timeEl.addEventListener("input", () => { state.t = parseFloat(timeEl.value); timeTxt.textContent = state.t.toFixed(2) + " s"; state.snapCam = true; });
+function setPlaying(v) { state.playing = v; playBtn.textContent = v ? "❚❚" : "▶"; playBtn.setAttribute("aria-label", v ? "Pause" : "Play"); driveBroadcast(); }
+playBtn.addEventListener("click", () => { if (!state.playing && state.t >= endTime() - 0.01) { state.t = -2.5; state.snapCam = true; } setPlaying(!state.playing); });
+document.getElementById("sound").addEventListener("click", e => { state.sound = !state.sound; e.currentTarget.setAttribute("aria-pressed", String(state.sound)); e.currentTarget.textContent = state.sound ? "On" : "Off"; bc.muted = !state.sound; });
+timeEl.addEventListener("input", () => { state.t = parseFloat(timeEl.value); timeTxt.textContent = state.t.toFixed(2) + " s"; state.snapCam = true; seekBroadcast(); });
 function press(sel, attr, val) { document.querySelectorAll(sel).forEach(b => b.setAttribute("aria-pressed", String(b.getAttribute(attr) === val))); }
-document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click", () => { state.speed = parseFloat(b.dataset.speed); press("[data-speed]", "data-speed", b.dataset.speed); }));
+document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click", () => { state.speed = parseFloat(b.dataset.speed); press("[data-speed]", "data-speed", b.dataset.speed); try { bc.playbackRate = state.speed; } catch (e) {} }));
 document.querySelectorAll("[data-scn]").forEach(b => b.addEventListener("click", () => {
   state.scn = b.dataset.scn; press("[data-scn]", "data-scn", state.scn);
-  state.t = state.scn === "actual" ? Math.min(state.t, T_ACTUAL_END) : Math.max(0, state.t0 - 1.0);
+  state.t = state.scn === "actual" ? Math.min(state.t, T_ACTUAL_END) : Math.max(-2.5, state.t0 - 1.0);
   state.snapCam = true; syncTime();
   setPlaying(!window.matchMedia("(prefers-reduced-motion: reduce)").matches);
 }));
@@ -1027,7 +1065,7 @@ const t0El = document.getElementById("t0"), t0Txt = document.getElementById("t0T
 let mcTimer = null;
 t0El.addEventListener("input", () => {
   state.t0 = parseFloat(t0El.value); t0Txt.textContent = state.t0.toFixed(2) + " s";
-  rebuildRecs(); if (state.t > endTime()) state.t = endTime(); syncTime(); drawChart();
+  rebuildRecs(); if (state.t > endTime()) state.t = endTime(); syncTime(); seekBroadcast(); drawChart();
   clearTimeout(mcTimer); mcTimer = setTimeout(runMC, 180);
 });
 
