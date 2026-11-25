@@ -205,20 +205,23 @@ td.num { font-family: var(--f-mono); white-space: nowrap; }
       </div>
     </div>
     <div class="row">
-      <div class="group" role="group" aria-label="Scenario">
-        <span class="lbl">Play</span>
-        <button class="chip" data-scn="actual" aria-pressed="true">What happened</button>
+      <div class="group" role="group" aria-label="First down plays">
+        <span class="lbl" style="color:var(--good)">1st down</span>
         <button class="chip throw" data-scn="throw" aria-pressed="false">Throw to #89</button>
-        <button class="chip run" data-scn="run" data-var="early" aria-pressed="false">Turn upfield at 4.0 s</button>
         <button class="chip run" data-scn="run" data-var="late" aria-pressed="false">Turn upfield at 4.5 s</button>
       </div>
+      <div class="group" role="group" aria-label="Short of the first down">
+        <span class="lbl" style="color:var(--bad)">No 1st down</span>
+        <button class="chip" data-scn="actual" aria-pressed="true">What happened</button>
+        <button class="chip run" data-scn="run" data-var="early" aria-pressed="false">Turn upfield at 4.0 s</button>
+      </div>
       <div class="group" role="group" aria-label="Camera">
-        <span class="lbl">Camera</span>
-        <button class="chip" data-cam="qb" aria-pressed="true">QB's eyes</button>
+        <span class="lbl">View</span>
+        <button class="chip" data-cam="real" aria-pressed="true">Real broadcast</button>
+        <button class="chip" data-cam="qb" aria-pressed="false">QB's eyes</button>
         <button class="chip" data-cam="behind" aria-pressed="false">Behind QB</button>
         <button class="chip" data-cam="broadcast" aria-pressed="false">Broadcast</button>
         <button class="chip" data-cam="overhead" aria-pressed="false">All-22</button>
-        <button class="chip" data-cam="real" aria-pressed="false">Real broadcast</button>
       </div>
     </div>
     <div class="row">
@@ -849,7 +852,7 @@ function initGL() {
 // ---------- State
 const KEY_IDS = new Set(["qb", "te", "d18", "d4", "d8"]);
 const BC_OFFSET = 2.85; // broadcast clip time = play clock + offset (snap at 2.85 s in the clip)
-const state = { runVar: "early", sound: true, labels: "key", t: -2.5, playing: false, speed: 1, scn: "actual", cam: "qb", t0: 4.0, reach: false, snapCam: true };
+const state = { runVar: "early", sound: true, labels: "key", t: -2.5, playing: false, speed: 1, scn: "actual", cam: "real", t0: 4.0, reach: false, snapCam: true };
 let REC = { throw: null, run: null };
 function pickRun(t0, success) {
   for (let seed = 1; seed < 600; seed++) {
@@ -1098,6 +1101,7 @@ document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click
 document.querySelectorAll("[data-scn]").forEach(b => b.addEventListener("click", () => {
   state.scn = b.dataset.scn;
   if (b.dataset.var) { state.runVar = b.dataset.var; REC.run = RUNS[state.runVar]; }
+  if (state.cam === "real") { state.cam = "qb"; press("[data-cam]", "data-cam", "qb"); applyCam(); } // a 3D play needs a 3D view
   document.querySelectorAll("[data-scn]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   state.t = state.scn === "actual" ? Math.min(state.t, T_ACTUAL_END) : Math.max(-2.5, REC[state.scn].t0 - 1.0);
   state.snapCam = true; syncTime();
@@ -1166,7 +1170,7 @@ function start() {
   syncTime();
   if (hasGL) {
     loadAthlete().then(gl => {
-      TEMPLATE = gl; initGL(); resize(); window.addEventListener("resize", resize); requestAnimationFrame(loop);
+      TEMPLATE = gl; initGL(); resize(); applyCam(); window.addEventListener("resize", resize); requestAnimationFrame(loop);
       if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) { state.t = -2.5; setPlaying(true); }
     });
   } else requestAnimationFrame(loop);
