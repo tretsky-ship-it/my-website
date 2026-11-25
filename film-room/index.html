@@ -113,6 +113,10 @@ button.chip {
   border: 1px solid var(--line); border-radius: 999px; padding: 8px 13px; cursor: pointer;
 }
 button.chip:hover { border-color: #3a4757; }
+button.chip:disabled { opacity: .35; cursor: not-allowed; }
+button.chip:disabled:hover { border-color: var(--line); }
+.needs3d.is-off { opacity: .35; }
+.needs3d.is-off * { cursor: not-allowed; }
 button.chip[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
 button.chip.throw[aria-pressed="true"] { background: var(--ucla); border-color: var(--ucla); color: #fff; }
 button.chip.run[aria-pressed="true"] { background: var(--run); border-color: var(--run); color: #1a1000; }
@@ -205,12 +209,12 @@ td.num { font-family: var(--f-mono); white-space: nowrap; }
       </div>
     </div>
     <div class="row">
-      <div class="group" role="group" aria-label="First down plays">
+      <div class="group needs3d" role="group" aria-label="First down plays">
         <span class="lbl" style="color:var(--good)">1st down</span>
         <button class="chip throw" data-scn="throw" aria-pressed="false">Throw to #89</button>
         <button class="chip run" data-scn="run" data-var="late" aria-pressed="false">Turn upfield at 4.5 s</button>
       </div>
-      <div class="group" role="group" aria-label="Short of the first down">
+      <div class="group needs3d" role="group" aria-label="Short of the first down">
         <span class="lbl" style="color:var(--bad)">No 1st down</span>
         <button class="chip" data-scn="actual" aria-pressed="true">What happened</button>
         <button class="chip run" data-scn="run" data-var="early" aria-pressed="false">Turn upfield at 4.0 s</button>
@@ -225,18 +229,18 @@ td.num { font-family: var(--f-mono); white-space: nowrap; }
       </div>
     </div>
     <div class="row">
-      <div class="slider">
+      <div class="slider needs3d">
         <span class="lbl" style="font-family:var(--f-display);text-transform:uppercase;letter-spacing:.1em;font-size:13px;color:var(--muted)">Decision at</span>
         <input type="range" id="t0" min="3.0" max="5.0" step="0.05" value="4.0" aria-label="Decision time for the alternate play">
         <span class="mono" id="t0Txt">4.00 s</span>
       </div>
-      <div class="group" role="group" aria-label="Player labels">
+      <div class="group needs3d" role="group" aria-label="Player labels">
         <span class="lbl">Labels</span>
         <button class="chip" data-lab="key" aria-pressed="true">Key players</button>
         <button class="chip" data-lab="all" aria-pressed="false">All</button>
         <button class="chip" data-lab="off" aria-pressed="false">Off</button>
       </div>
-      <label class="check"><input type="checkbox" id="reach"> Show defender reach</label>
+      <label class="check needs3d"><input type="checkbox" id="reach"> Show defender reach</label>
     </div>
   </div>
 
@@ -1101,7 +1105,6 @@ document.querySelectorAll("[data-speed]").forEach(b => b.addEventListener("click
 document.querySelectorAll("[data-scn]").forEach(b => b.addEventListener("click", () => {
   state.scn = b.dataset.scn;
   if (b.dataset.var) { state.runVar = b.dataset.var; REC.run = RUNS[state.runVar]; }
-  if (state.cam === "real") { state.cam = "qb"; press("[data-cam]", "data-cam", "qb"); applyCam(); } // a 3D play needs a 3D view
   document.querySelectorAll("[data-scn]").forEach(x => x.setAttribute("aria-pressed", String(x === b)));
   state.t = state.scn === "actual" ? Math.min(state.t, T_ACTUAL_END) : Math.max(-2.5, REC[state.scn].t0 - 1.0);
   state.snapCam = true; syncTime();
@@ -1109,6 +1112,15 @@ document.querySelectorAll("[data-scn]").forEach(b => b.addEventListener("click",
 }));
 function applyCam() {
   const real = state.cam === "real";
+  // the broadcast only shows what happened: grey out the 3D-only choices
+  if (real && state.scn !== "actual") {
+    state.scn = "actual";
+    document.querySelectorAll("[data-scn]").forEach(x => x.setAttribute("aria-pressed", String(x.dataset.scn === "actual")));
+    if (state.t > endTime()) state.t = endTime();
+    syncTime(); seekBroadcast();
+  }
+  document.querySelectorAll("[data-scn], [data-lab], #t0, #reach").forEach(el => { el.disabled = real; });
+  document.querySelectorAll(".needs3d").forEach(el => el.classList.toggle("is-off", real));
   bc.hidden = !real;
   document.querySelector(".hud").hidden = real; document.querySelector(".key").hidden = real;
   if (real) { document.getElementById("teTag").hidden = true; document.getElementById("stickTag").hidden = true; }
@@ -1166,6 +1178,7 @@ function drawChart() {
 }
 
 function start() {
+  try { applyCam(); } catch (e) {}
   rebuildRecs();
   syncTime();
   if (hasGL) {
