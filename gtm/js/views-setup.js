@@ -122,6 +122,7 @@
         var ok = !miss.some(function (m) { return m.path === f.path; });
         return '<li class="' + (ok ? 'done' : '') + '"><span class="tick">' + (ok ? I('check') : '') + '</span><span>' + esc(f.label) + (f.path === 'sources' && !ok ? ' · <a href="#/evidence">add</a>' : '') + '</span></li>';
       }).join('') + '</ul>' +
+      '<div class="note ' + (App.canSuggest(t) ? 'info' : '') + '" style="margin-top:14px">' + I('sparkle') + '<div class="grow"><b>Let Claude draft the ICP</b><br><span class="small">' + (App.canSuggest(t) ? 'Uses the website, offer, notes and sources you have entered. You review and edit everything.' : 'Fill in the website or offer first.') + '</span>' + (App.canSuggest(t) ? '<div style="margin-top:8px"><button class="btn sm primary" data-act="ai-icp">Suggest ICP and personas</button></div>' : '') + '</div></div>' +
       (t.sources.length ? '<div class="small muted" style="margin-top:12px">Newest source: ' + App.fmtDate(t.sources.map(function (s) { return s.date; }).sort().pop()) + ' · oldest: ' + App.fmtDate(t.sources.map(function (s) { return s.date; }).sort()[0]) + '</div>' : '');
     App.renderSide();
   };
@@ -269,11 +270,12 @@
     title: 'Ideal customer profile',
     header: function () {
       var icp = selICP();
-      return { title: 'Ideal customer profile', actions: icp ? '<button class="btn" data-act="icp-recipe">' + I('download') + 'Databar filter recipe</button>' : '' };
+      var canAi = !icp || icp.status === 'draft' || !G.draftICP(S.t);
+      return { title: 'Ideal customer profile', actions: (icp ? '<button class="btn hide-sm" data-act="icp-recipe">' + I('download') + 'Databar filter recipe</button>' : '') + (canAi ? '<button class="btn primary" data-act="ai-icp">' + I('sparkle') + 'Suggest with Claude</button>' : '') };
     },
     render: function () {
       var t = S.t, icp = selICP();
-      if (!icp) return empty('icp', 'Draft the first ICP', 'Define who to target: industries, size, geography, dated triggers, disqualifiers and buyer personas. Weights start unset; you can use the suggested split. The sponsor approves a frozen version before any account is scored.', '<button class="btn primary" data-act="icp-new">' + I('plus') + 'Start ICP draft</button>');
+      if (!icp) return empty('icp', 'Draft the first ICP', 'Define who to target: industries, size, geography, dated triggers, disqualifiers and buyer personas. Weights start unset; you can use the suggested split. The sponsor approves a frozen version before any account is scored.', (App.canSuggest(t) ? '<button class="btn primary" data-act="ai-icp">' + I('sparkle') + 'Suggest with Claude</button><button class="btn" data-act="icp-new">' + I('plus') + 'Start blank</button>' : '<button class="btn primary" data-act="icp-new">' + I('plus') + 'Start ICP draft</button><a class="btn" href="#/setup">' + I('sparkle') + 'Add website and offer to get suggestions</a>'));
       var idx = t.icp.indexOf(icp), P = 'icp.' + idx, ed = icp.status === 'draft', dis = !ed;
       var vers = t.icp.slice().sort(function (a, b) { return b.v - a.v; });
       function crit(title, sub, input, basis) { return '<div class="crit"><div class="ttl"><b>' + title + '</b><span>' + sub + '</span></div><div>' + input + '</div><div>' + (basis || '') + '</div></div>'; }
@@ -331,6 +333,7 @@
       html += '<div class="field"><label for="icp-note">What changed and why</label>' + App.bindText(P + '.note', { id: 'icp-note', rows: 2, placeholder: 'Shown in the approval record' }) + '</div>';
       html += probs.length ? '<div class="note warn">' + I('alert') + '<div class="grow"><b>Before approval</b><ul>' + probs.map(function (p) { return '<li>' + esc(p) + '</li>'; }).join('') + '</ul></div></div>' : '<div class="note ok">' + I('check') + '<span class="grow">Ready for the sponsor to approve.</span></div>';
       if (assumptions) html += '<div class="small muted">' + App.plural(assumptions, 'criterion', 'criteria') + ' labelled as assumptions. That is allowed for a baseline; mark sources when you have them.</div>';
+      html += '<button class="btn" data-act="ai-icp">' + I('sparkle') + 'Suggest more with Claude</button>';
       html += '<div class="row"><button class="btn primary grow" data-act="icp-approve"' + (probs.length ? ' disabled' : '') + '>' + I('shield') + 'Approve v' + icp.v + '</button><button class="btn ghost" data-act="icp-discard">Discard</button></div>';
       if (icp.basedOn) html += '<div class="small muted">Based on v' + icp.basedOn + '.</div>';
     } else if (icp.status === 'approved') {

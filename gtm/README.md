@@ -17,6 +17,10 @@ node gtm/tests/engine.test.js # PRD acceptance checks for the core logic
 - Every list starts with an empty state and one obvious action. CSV imports map columns automatically from common export
   headers (Databar, Clay, HubSpot, Smartlead) and show a preview before anything is written.
 - `Ctrl K` searches the open client only.
+- **Suggest with Claude** (Setup, ICP and campaign brief) drafts the ICP's firmographics, triggers, disqualifiers and buyer personas, or a
+  campaign brief and sequence, from the website, offer, notes and sources you entered. You pick what to keep; suggested criteria are
+  labelled *Assumption* until you attach a source, and nothing is approved automatically. On claude.ai this asks Claude directly;
+  elsewhere it gives you a prompt to paste into Claude and a box for the answer.
 
 ## What the PRD requirements map to
 

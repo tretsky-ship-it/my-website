@@ -371,7 +371,7 @@
     var miss = briefMissing(t, c);
     return '<div class="split wide-side"><div class="stack">' +
       (locked ? '<div class="note info">' + I('info') + '<span class="grow">Batches already drafted keep their own frozen copy. Edits here apply to the next batch you draft.</span></div>' : '') +
-      '<div class="card"><div class="card-h"><h2>Brief</h2><span id="cmp-badge"></span></div><div class="card-b"><div class="fields">' +
+      '<div class="card"><div class="card-h"><h2>Brief</h2><span id="cmp-badge"></span><button class="btn sm" data-act="ai-brief" data-id="' + c.id + '">' + I('sparkle') + 'Suggest with Claude</button></div><div class="card-b"><div class="fields">' +
         f('Campaign name', 'name') + f('Owner', 'owner', { hint: 'Gets replies when the CRM has no owner.' }) +
         f('Business objective', 'objective', { full: true, text: true, rows: 2 }) +
         f('Persona', 'personaId', { select: icp ? icp.personas.map(function (p) { return { value: p.id, label: p.name + ' (' + p.priority + ')' }; }) : [] }) +
