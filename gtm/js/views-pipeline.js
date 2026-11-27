@@ -9,7 +9,7 @@
   function scoreBar(s) {
     if (s.status === 'needs-icp' || !s.max) return '<span class="faint small">Unscored</span>';
     var cut = s.cutoff != null ? Math.min(100, s.cutoff / s.max * 100) : null;
-    return '<div class="score" title="' + s.known + ' verified points, ' + s.unresolved + ' unresolved, cutoff ' + s.cutoff + '"><div class="bar"><span class="known" style="width:' + (s.known / s.max * 100) + '%"></span><span class="unres" style="left:' + (s.known / s.max * 100) + '%;width:' + (s.unresolved / s.max * 100) + '%"></span>' + (cut != null ? '<span class="cut" style="left:' + cut + '%"></span>' : '') + '</div><span class="lbl"><b>' + s.known + '</b>' + (s.unresolved ? ' +' + s.unresolved + ' unresolved' : '') + ' / ' + s.max + '</span></div>';
+    return '<div class="score" title="' + s.known + ' verified points, ' + s.unresolved + ' unresolved, cutoff ' + s.cutoff + '"><div class="bar"><span class="known" style="width:' + (s.known / s.max * 100) + '%"></span><span class="unres" style="left:' + (s.known / s.max * 100) + '%;width:' + (s.unresolved / s.max * 100) + '%"></span>' + (cut != null ? '<span class="cut" style="left:' + cut + '%"></span>' : '') + '</div><span class="lbl"><b>' + s.known + '</b> of ' + s.max + ' confirmed' + (s.unresolved ? ' · ' + s.unresolved + ' unknown' : '') + '</span></div>';
   }
   App.scoreBar = scoreBar;
 
@@ -30,20 +30,28 @@
       var c = am.counts;
       var html = (!act ? icpNote(t) : '') +
         '<div class="kpis" style="margin-bottom:16px">' +
-          tile('Research yield', App.rateHTML(am.yield), 'Eligible ÷ evaluated accounts') +
-          tile('Contact coverage', App.rateHTML(am.coverage), 'Eligible accounts with a ready buyer') +
+          tile('Ready to target', c.eligible + ' <small class="muted" style="font-size:14px">of ' + t.accounts.length + '</small>', 'Companies that fully meet your ICP', 'Companies that meet your ICP well enough to contact. Only these can go into a campaign. Others need research, are a weak fit, or are blocked.') +
+          tile('Have a buyer', am.coverage.n + ' <small class="muted" style="font-size:14px">of ' + c.eligible + '</small>', 'Ready companies with a contact you can email', 'Of the companies ready to target, how many have a contact with a verified email who matches a buyer persona. Campaigns are drafted for these people.') +
           tile('Excluded', c.excluded, Object.keys(am.exclusionReasons).slice(0, 2).map(function (k) { return am.exclusionReasons[k] + ' ' + k.toLowerCase(); }).join(' · ') || 'None') +
           tile('Scored against', icp ? 'ICP v' + icp.v : '—', icp ? (icp.status === 'approved' ? 'Approved' : 'Draft preview') + ' · cutoff ' + (icp.cutoff != null ? icp.cutoff : 'unset') : 'No ICP yet') +
         '</div>' +
         '<div class="tabs"><a href="#/accounts" class="' + (tab === 'list' ? 'on' : '') + '">Accounts <span class="n">' + t.accounts.length + '</span></a><a href="#/accounts/conflicts" class="' + (tab === 'conflicts' ? 'on' : '') + '">Manual resolution <span class="n' + (conflicts.length ? ' alert' : '') + '">' + conflicts.length + '</span></a></div>';
       if (tab === 'conflicts') return html + conflictList(t);
+      var legend = '<div class="small" style="display:grid;gap:4px;margin-top:6px">' +
+        '<div>' + App.badge('ok', 'Eligible') + ' Meets your ICP. Ready for contacts and campaigns.</div>' +
+        '<div>' + App.badge('warn', 'Needs research') + ' Probably a fit, but something required is unknown, usually a <b>recent buying signal</b> (a dated event with a source link, like a job posting). Click the company to see exactly what\'s missing.</div>' +
+        '<div>' + App.badge('muted', 'Deprioritised') + ' Checked, and not a strong enough fit.</div>' +
+        '<div>' + App.badge('bad', 'Excluded') + ' Blocked: existing customer, open deal, wrong country or industry, or on the do-not-contact list.</div></div>';
+      html += !c.eligible && t.accounts.length ?
+        '<div class="note warn" style="margin-bottom:12px">' + I('info') + '<div class="grow"><b>None of your ' + t.accounts.length + ' companies are ready to target yet.</b>' + (c.research ? ' ' + c.research + ' need research; most are missing a recent buying signal. Open one and fill in its trigger (what happened, when, and a link).' : '') + ' Just exploring? <a href="#" data-act="test-data">Fill with test data</a> to try the rest of the flow.' + legend + '</div></div>'
+        : '<details class="small" style="margin:-6px 0 12px"><summary class="muted" style="cursor:pointer">What do these statuses mean?</summary>' + legend + '</details>';
       html += '<div class="row" style="margin-bottom:12px"><div class="seg" role="tablist" aria-label="Filter by status">' +
         [['all', 'All', t.accounts.length], ['eligible', 'Eligible', c.eligible], ['research', 'Needs research', c.research], ['deprioritized', 'Deprioritised', c.deprioritized], ['excluded', 'Excluded', c.excluded]].concat(c['needs-icp'] ? [['needs-icp', 'Unscored', c['needs-icp']]] : [])
           .map(function (x) { return '<button data-act="acc-filter" data-f="' + x[0] + '" class="' + (f === x[0] ? 'on' : '') + '" role="tab" aria-selected="' + (f === x[0]) + '">' + x[1] + ' <span class="n">' + x[2] + '</span></button>'; }).join('') +
         '</div><span class="grow"></span><input type="search" data-filter="acc" placeholder="Search company or domain" value="' + esc(S.ui.aq || '') + '" style="max-width:260px" aria-label="Search accounts"></div>' +
         '<div class="card"><div class="table-wrap" id="acc-table"></div></div>';
       return html;
-      function tile(k, v, s) { return '<div class="kpi"><span class="k">' + k + '</span><span class="v" style="font-size:20px">' + v + '</span><span class="s">' + esc(s) + '</span></div>'; }
+      function tile(k, v, s, help) { return '<div class="kpi"><span class="k">' + k + (help ? ' <span class="tip" tabindex="0" role="button" aria-label="Help: ' + esc(help) + '" data-help="' + esc(help) + '">?</span>' : '') + '</span><span class="v" style="font-size:20px">' + v + '</span><span class="s">' + esc(s) + '</span></div>'; }
     },
     mounted: function () { App.refresh('acc-table'); }
   };
@@ -51,6 +59,17 @@
     var d = G.draftICP(t);
     return '<div class="note warn" style="margin-bottom:16px">' + I('alert') + '<span class="grow">' + (d ? 'Scores below preview <b>draft ICP v' + d.v + '</b>. Nothing can be staged until a version is approved.' : 'No ICP yet, so accounts can be imported but not scored.') + '</span><a class="btn sm" href="#/icp">' + (d ? 'Review draft' : 'Create ICP') + '</a></div>';
   }
+  // Turn scoring jargon into what the person needs to do.
+  function plainWhy(r) {
+    r = String(r || '');
+    if (/trigger/i.test(r)) return /date and source/i.test(r) ? 'Missing: the date or link for its buying signal' : 'Missing: a recent buying signal';
+    if (/Employee count/i.test(r)) return 'Missing: number of employees';
+    if (/Industry missing/i.test(r)) return 'Missing: industry';
+    if (/Country unknown/i.test(r)) return 'Missing: country';
+    if (/buyer|Contacts need review/i.test(r)) return 'Missing: a contact to email';
+    return 'Missing: ' + r.replace(/^[^:]*:\s*/, '');
+  }
+  App.plainWhy = plainWhy;
   App.refreshers['acc-table'] = function () {
     var el = document.getElementById('acc-table'); if (!el) return;
     var t = S.t, sc = G.scoreAll(t), f = S.ui.af || 'all', q = (S.ui.aq || '').toLowerCase();
@@ -62,7 +81,7 @@
       rows.map(function (a) {
         var s = sc[a.id], nc = t.contacts.filter(function (c) { return c.accountId === a.id; });
         var ready = nc.filter(function (c) { return G.contactState(t, c) === 'ready'; }).length;
-        var why = s.status === 'excluded' ? s.reasons[0] : s.status === 'research' ? s.research[0] : '';
+        var why = s.status === 'excluded' ? s.reasons[0] : s.status === 'research' ? plainWhy(s.research[0]) : '';
         return '<tr class="click" data-act="acc-open" data-id="' + a.id + '" tabindex="0"><td class="name"><b>' + esc(a.name) + (a.suggested ? ' <span class="badge info plain" title="Suggested by GTM Engine; confirm the details">Suggested</span>' : '') + '</b><span>' + esc(a.domain) + (a.crmId ? ' · HS ' + esc(a.crmId) : '') + '</span></td>' +
           '<td>' + esc(a.industry || '—') + '</td><td class="num">' + App.num(a.employees) + '</td><td>' + esc(a.country || '—') + '</td>' +
           '<td style="max-width:240px">' + (a.trigger.text ? '<span title="' + esc(a.trigger.text) + '">' + esc(a.trigger.text.length > 42 ? a.trigger.text.slice(0, 40) + '…' : a.trigger.text) + '</span><br><small class="muted">' + (a.trigger.date ? App.rel(a.trigger.date) : 'undated') + (a.trigger.url ? ' · sourced' : ' · no source') + '</small>' : '<span class="faint">—</span>') + '</td>' +
@@ -253,7 +272,7 @@
     render: function (param) {
       var t = S.t;
       if (param === 'review') S.ui.cf = 'review';
-      if (!t.contacts.length) return App.emptyState('contacts', 'Resolve the buyers', t.accounts.length ? 'Let GTM Engine suggest named buyers at your accounts, look them up yourself with Find buyers, or import contacts from Clay or a CSV. Titles are matched to your personas; anything ambiguous comes back here for a decision.' : 'Import accounts first. Contacts are matched to accounts by company domain or email domain.', t.accounts.length ? '<button class="btn primary" data-act="ai-contacts">' + I('sparkle') + 'Suggest contacts with GTM Engine</button><button class="btn" data-act="find-buyers">' + I('search') + 'Find buyers</button><button class="btn" data-act="con-import">' + I('upload') + 'Import contacts</button><button class="btn" data-act="con-template">' + I('download') + 'CSV template</button>' : '<a class="btn primary" href="#/accounts">Go to accounts</a>');
+      if (!t.contacts.length) return App.emptyState('contacts', 'Resolve the buyers', t.accounts.length ? 'Let GTM Engine suggest named buyers at your accounts, look them up yourself with Find buyers, or import contacts from Clay or a CSV. Titles are matched to your personas; anything ambiguous comes back here for a decision.' : 'Import accounts first. Contacts are matched to accounts by company domain or email domain.', t.accounts.length ? '<button class="btn primary" data-act="ai-contacts">' + I('sparkle') + 'Suggest contacts with GTM Engine</button><button class="btn" data-act="find-buyers">' + I('search') + 'Find buyers</button><button class="btn" data-act="con-import">' + I('upload') + 'Import contacts</button><button class="btn" data-act="con-template">' + I('download') + 'CSV template</button><button class="btn ghost" data-act="test-data">' + I('flag') + 'Fill with test data</button>' : '<a class="btn primary" href="#/accounts">Go to accounts</a>');
       var icp = G.icpForScoring(t), counts = { all: t.contacts.length, ready: 0, review: 0, blocked: 0 };
       t.contacts.forEach(function (c) { var s = G.contactState(t, c, icp); if (s === 'ready') counts.ready++; else if (REVIEW.indexOf(s) > -1) counts.review++; else counts.blocked++; });
       var f = S.ui.cf || 'all';
@@ -486,8 +505,8 @@
     var sk = Object.keys(cand.skipped);
     App.modal({
       title: 'Draft batch ' + (t.batches.filter(function (b) { return b.campaignId === c.id; }).length + 1), sub: 'Drafts are rendered from the brief, ICP v' + cand.icp.v + ' and each account\'s cited facts.',
-      body: (cand.contacts.length ? App.resultTiles([['Will be drafted', cand.contacts.length], ['Waiting for next batch', cand.overflow]]) : '<div class="note warn">' + I('alert') + '<span class="grow">No contacts are ready for this campaign yet.</span></div>') +
-        (sk.length ? '<div><div class="label" style="margin-bottom:6px">Not included, and why</div><table class="t"><tbody>' + sk.sort(function (a, b) { return cand.skipped[b] - cand.skipped[a]; }).map(function (k) { return '<tr><td>' + esc(k) + '</td><td class="num"><b>' + cand.skipped[k] + '</b></td></tr>'; }).join('') + '</tbody></table></div>' : '') +
+      body: (cand.contacts.length ? App.resultTiles([['Will be drafted', cand.contacts.length], ['Waiting for next batch', cand.overflow]]) : '<div class="note warn">' + I('alert') + '<div class="grow"><b>No one is ready to email yet.</b> A person can be drafted when all of these are true:<ul><li>their company is <b>Eligible</b> (not "Needs research")</li><li>they have a <b>verified</b> work email</li><li>their title matches this campaign\'s persona</li></ul>The list below shows what\'s holding people back. <a href="#/accounts" data-close>Open Accounts</a> · <a href="#/contacts" data-close>Open Contacts</a> · <a href="#" data-act="test-data">Fill with test data</a></div></div>') +
+        (sk.length ? '<div><div class="label" style="margin-bottom:6px">Not included, and why (number of contacts)</div><table class="t"><tbody>' + sk.sort(function (a, b) { return cand.skipped[b] - cand.skipped[a]; }).map(function (k) { return '<tr><td>' + esc(k) + '</td><td class="num"><b>' + cand.skipped[k] + '</b></td></tr>'; }).join('') + '</tbody></table></div>' : '') +
         '<div class="small muted">Suppressed contacts produce no draft. Suppression is checked again just before export.</div>',
       actions: cand.contacts.length ? [{ label: 'Cancel', cls: 'ghost' }, {
         label: 'Draft ' + App.plural(cand.contacts.length, 'email sequence'), cls: 'primary', icon: 'sparkle', onClick: function () {

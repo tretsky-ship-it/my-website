@@ -100,6 +100,7 @@
       '<div class="row tight">' + (hdr.actions || '') + '<button class="btn ghost hide-sm" data-act="search" title="Search this client (Ctrl K)">' + I('search') + '<span>Search</span> <kbd>Ctrl K</kbd></button></div>';
     var bn = '';
     if (S.t.paused) bn += '<div class="banner paused">' + I('pause') + '<span class="grow"><b>This client is paused.</b> Approvals, staging and exports are blocked until you resume.</span><button class="btn sm" data-act="toggle-pause">' + I('play') + 'Resume</button></div>';
+    if (App.hasTestData && App.hasTestData(S.t)) bn += '<div class="banner sample">' + I('flag') + '<span class="grow"><b>Test data in use.</b> Test contacts and placeholder signals are fake and can\'t reach real inboxes.</span><button class="btn sm" data-act="test-remove">' + I('trash') + 'Remove test data</button></div>';
     if (S.t.sample) bn += '<div class="banner sample">' + I('info') + '<span class="grow"><b>Sample client.</b> Ledgerline and every company here are fictional, so you can try each step safely.</span><button class="btn sm" data-act="new-client">' + I('plus') + 'Set up a real client</button></div>';
     document.getElementById('banners').innerHTML = bn;
     document.getElementById('view').innerHTML = v.render(S.param);
