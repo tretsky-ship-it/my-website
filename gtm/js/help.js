@@ -24,6 +24,7 @@
     'sup-why': 'A short reason, e.g. "Partner" or "Asked not to be contacted". Shown wherever the block applies.',
 
     /* Sources and proof */
+    'sa-x': 'Paste a call transcript or your notes straight from Fireflies, Fathom, Zoom, Gong or anywhere else. Keep speaker names and timestamps if you have them. Claude reads this when suggesting the ICP and personas, and you can open it again from the Sources list.',
     'sa-t': 'A name you\'ll recognise later, e.g. "Discovery call with Pat, Oct 3" or "Won/lost deals 2025".',
     'sa-ty': 'What kind of material this is. Call notes and transcripts are where buyer language and objections usually come from.',
     'sa-d': 'When the material was created or the call happened, not today\'s date. Old sources are easier to spot this way.',

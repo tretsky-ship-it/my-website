@@ -153,12 +153,12 @@
   /* ================= Evidence & proof ================= */
   V.evidence = {
     title: 'Evidence & proof',
-    header: function () { return { title: 'Evidence & proof', actions: '<button class="btn" data-act="proof-add">' + I('plus') + 'Add proof</button><button class="btn primary" data-act="source-add">' + I('upload') + 'Add source</button>' }; },
+    header: function () { return { title: 'Evidence & proof', actions: '<button class="btn hide-sm" data-act="proof-add">' + I('plus') + 'Add proof</button><button class="btn" data-act="source-add" data-paste="1">' + I('edit') + 'Paste transcript</button><button class="btn primary" data-act="source-add">' + I('upload') + 'Add source</button>' }; },
     render: function (param) {
       var t = S.t, tab = param === 'proof' ? 'proof' : 'sources';
       var html = '<div class="tabs"><a href="#/evidence" class="' + (tab === 'sources' ? 'on' : '') + '">Sources <span class="n">' + t.sources.length + '</span></a><a href="#/evidence/proof" class="' + (tab === 'proof' ? 'on' : '') + '">Proof library <span class="n">' + t.proof.length + '</span></a></div>';
       if (tab === 'sources') {
-        if (!t.sources.length) return html + empty('evidence', 'Add the client\'s materials', 'Upload the deck, website material, discovery notes, call transcripts and won/lost records. Each keeps its date, owner and usage permission, so every claim can be traced.', '<button class="btn primary" data-act="source-add">' + I('upload') + 'Add the first source</button>');
+        if (!t.sources.length) return html + empty('evidence', 'Add the client\'s materials', 'Upload the deck, website material, discovery notes, call transcripts and won/lost records. Each keeps its date, owner and usage permission, so every claim can be traced.', '<button class="btn primary" data-act="source-add" data-paste="1">' + I('edit') + 'Paste a transcript</button><button class="btn" data-act="source-add">' + I('upload') + 'Upload a file</button>');
         return html + '<div class="card"><div class="table-wrap"><table class="t"><thead><tr><th>Source</th><th>Type</th><th>Date</th><th>Owner</th><th>Permission</th><th class="num">Used by</th><th></th></tr></thead><tbody>' +
           t.sources.map(function (s) {
             var dep = dependents(t, s.id);
@@ -191,28 +191,42 @@
     var obs = t.observations.filter(function (o) { return o.sourceId === id; });
     return { crit: crit, proof: proof, obs: obs, total: crit.length + proof.length + obs.length };
   }
-  A['source-add'] = function () {
-    var today = new Date().toISOString().slice(0, 10);
+  A['source-add'] = function (el) {
+    var today = new Date().toISOString().slice(0, 10), pasteFirst = el && el.getAttribute && el.getAttribute('data-paste');
+    var types = ['Transcript', 'Call notes', 'Deck', 'Website', 'Won/lost export', 'Case study', 'Other'];
     App.modal({
-      title: 'Add a source', sub: 'Evidence keeps its date, owner and usage permission. Text files (.txt, .md, .vtt, .srt, .csv) are stored so excerpts can be opened later.',
-      body: '<div class="fields"><div class="field full"><label for="sa-t">Title</label><input id="sa-t" placeholder="e.g. Discovery call with sponsor" autofocus></div>' +
-        '<div class="field"><label for="sa-ty">Type</label><select id="sa-ty"><option>Deck</option><option>Website</option><option>Call notes</option><option>Transcript</option><option>Won/lost export</option><option>Case study</option><option>Other</option></select></div>' +
+      title: pasteFirst ? 'Paste a transcript' : 'Add a source', wide: true,
+      sub: 'Paste a call transcript or notes, attach a file, or both. Evidence keeps its date, owner and usage permission so every claim can be traced back.',
+      body: '<div class="field"><label for="sa-x">Paste transcript or notes</label><textarea id="sa-x" rows="9" placeholder="Paste the transcript from Fireflies, Fathom, Zoom, Gong or your notes here.&#10;&#10;Speaker names and timestamps are fine to keep."' + (pasteFirst ? ' autofocus' : '') + '></textarea><span class="hint" id="sa-count">Optional if you attach a file.</span></div>' +
+        '<div class="fields"><div class="field full"><label for="sa-t">Title</label><input id="sa-t" placeholder="e.g. Discovery call with Pat, Oct 3"' + (pasteFirst ? '' : ' autofocus') + '><span class="hint">Leave blank and a title is made from the type and date.</span></div>' +
+        '<div class="field"><label for="sa-ty">Type</label><select id="sa-ty">' + types.map(function (x) { return '<option' + (x === (pasteFirst ? 'Transcript' : 'Call notes') ? ' selected' : '') + '>' + x + '</option>'; }).join('') + '</select></div>' +
         '<div class="field"><label for="sa-d">Source date</label><input id="sa-d" type="date" value="' + today + '"></div>' +
         '<div class="field"><label for="sa-o">Owner</label><input id="sa-o" value="' + esc(S.t.profile.outreachOwner || '') + '"></div>' +
         '<div class="field"><label for="sa-p">Usage permission</label><select id="sa-p"><option value="internal">Internal only</option><option value="public">Public use permitted</option></select></div>' +
         '<div class="field"><label for="sa-u">URL (optional)</label><input id="sa-u" type="url" placeholder="https://"></div>' +
         '<div class="field"><label for="sa-or">Meeting or origin ID (optional)</label><input id="sa-or" placeholder="Same ID for notes and transcript of one call"></div>' +
         '<div class="field full"><label for="sa-f">File (optional)</label><input id="sa-f" type="file"></div></div>',
+      onOpen: function (m) {
+        var x = m.body.querySelector('#sa-x'), cnt = m.body.querySelector('#sa-count'), ty = m.body.querySelector('#sa-ty'), typeTouched = false;
+        ty.addEventListener('change', function () { typeTouched = true; });
+        x.addEventListener('input', function () {
+          var v = x.value.trim(), words = v ? v.split(/\s+/).length : 0;
+          cnt.textContent = v ? App.num(words) + ' words' + (v.length > 200000 ? ' · only the first 200,000 characters are kept' : '') : 'Optional if you attach a file.';
+          if (v && !typeTouched && ty.value !== 'Transcript' && /^\s*(\[?\d{1,2}:\d{2}|[A-Z][\w .'-]{1,40}:)/m.test(v)) ty.value = 'Transcript';
+        });
+      },
       actions: [{ label: 'Cancel', cls: 'ghost' }, {
         label: 'Add source', cls: 'primary', onClick: function (m) {
-          var b = m.body, title = b.querySelector('#sa-t').value.trim();
-          if (!title) { b.querySelector('#sa-t').focus(); App.toast('Give the source a title', 'bad'); return false; }
-          var s = { id: G.uid('src'), title: title, type: b.querySelector('#sa-ty').value, date: b.querySelector('#sa-d').value, owner: b.querySelector('#sa-o').value, permission: b.querySelector('#sa-p').value, url: b.querySelector('#sa-u').value, originId: b.querySelector('#sa-or').value.trim(), withdrawn: false, addedAt: G.now() };
-          var file = b.querySelector('#sa-f').files[0];
-          function finish() { S.t.sources.push(s); G.log(S.t, 'Operator', 'Added source', title); App.save(); App.render(); App.toast('Source added'); }
+          var b = m.body, pasted = b.querySelector('#sa-x').value.trim(), file = b.querySelector('#sa-f').files[0];
+          var type = b.querySelector('#sa-ty').value, date = b.querySelector('#sa-d').value;
+          var title = b.querySelector('#sa-t').value.trim() || ((pasted || file) ? type + ', ' + App.fmtDate(date ? date + 'T12:00:00Z' : G.now()) : '');
+          if (!title) { b.querySelector('#sa-x').focus(); App.toast('Paste some text, attach a file or give the source a title', 'bad'); return false; }
+          var s = { id: G.uid('src'), title: title, type: type, date: date, owner: b.querySelector('#sa-o').value, permission: b.querySelector('#sa-p').value, url: b.querySelector('#sa-u').value, originId: b.querySelector('#sa-or').value.trim(), withdrawn: false, addedAt: G.now() };
+          if (pasted) s.content = pasted.slice(0, 200000);
+          function finish() { S.t.sources.push(s); G.log(S.t, 'Operator', 'Added source', title); App.save(); App.render(); App.toast('Source added' + (s.content ? '. Claude will read it when suggesting the ICP.' : '')); }
           if (file) {
             s.fileName = file.name; s.fileSize = file.size;
-            if (/\.(txt|md|vtt|srt|csv)$/i.test(file.name) && file.size < 400000) App.readFile(file).then(function (txt) { s.content = txt; finish(); });
+            if (/\.(txt|md|vtt|srt|csv)$/i.test(file.name) && file.size < 400000) App.readFile(file).then(function (txt) { s.content = ((s.content ? s.content + '\n\n' : '') + txt).slice(0, 200000); finish(); });
             else finish();
           } else finish();
         }
