@@ -120,19 +120,38 @@
       '\n\nReply with ONLY a JSON object:\n{"contacts":[{"domain":"company domain from the list","name":"Full Name","title":"their job title","basis":"where this is publicly stated, e.g. company leadership page or a 2025 press release","confidence":"high or medium"}]}';
   }
   function cleanContacts(d, accs) {
-    var t = S.t, seen = {}, byDom = {};
-    accs.forEach(function (a) { byDom[a.domain] = a; });
-    var list = (d && Array.isArray(d.contacts) ? d.contacts : []).map(function (c) {
-      var dom = G.normDomain(c && c.domain), a = byDom[dom] || (dom && G.accountByDomain(t, dom));
-      var name = String(c && c.name || '').replace(/\s+/g, ' ').trim().slice(0, 80);
-      return { account: a || null, name: name, title: String(c && c.title || '').trim().slice(0, 120), basis: String(c && c.basis || '').trim().slice(0, 200), confidence: /high/i.test(c && c.confidence) ? 'high' : 'medium' };
+    var t = S.t, seen = {}, byDom = {}, byName = {}, unmatched = 0, noName = 0;
+    function nk(x) { return String(x || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').replace(/\b(inc|llc|ltd|co|corp|corporation|company|the)\b/g, '').trim(); }
+    accs.forEach(function (a) { byDom[a.domain] = a; byName[nk(a.name)] = a; });
+    // Accept {contacts:[...]}, a bare array, other key names, or people nested under each company.
+    var raw = Array.isArray(d) ? d : d && (d.contacts || d.people || d.results || d.buyers || d.companies) || [];
+    var flat = [];
+    (Array.isArray(raw) ? raw : []).forEach(function (x) {
+      if (!x || typeof x !== 'object') return;
+      var nested = x.contacts || x.people || x.buyers;
+      if (Array.isArray(nested)) nested.forEach(function (p) { flat.push(Object.assign({ domain: x.domain || x.website, company: x.company || x.name }, p)); });
+      else flat.push(x);
+    });
+    var list = flat.map(function (c) {
+      var dom = G.normDomain(c.domain || c.website || c.companyDomain || c.company_domain);
+      var a = (dom && (byDom[dom] || G.accountByDomain(t, dom))) || byName[nk(c.company || c.companyName || c.company_name || c.account)] || null;
+      var name = String(c.name || c.fullName || c.full_name || [c.firstName || c.first_name, c.lastName || c.last_name].filter(Boolean).join(' ') || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+      return { account: a, name: name, title: String(c.title || c.role || c.jobTitle || '').trim().slice(0, 120), basis: String(c.basis || c.source || '').trim().slice(0, 200), confidence: /high/i.test(c.confidence) ? 'high' : 'medium' };
     }).filter(function (c) {
-      if (!c.account || !c.name || !/\s/.test(c.name)) return false;
+      if (!c.account) { unmatched++; return false; }
+      if (!c.name || !/\s/.test(c.name)) { noName++; return false; }
       var k = c.account.id + '|' + c.name.toLowerCase(); if (seen[k]) return false; seen[k] = 1;
       c.existing = t.contacts.some(function (x) { return x.accountId === c.account.id && x.name.toLowerCase() === c.name.toLowerCase(); });
       return true;
     });
-    return list.length ? { contacts: list } : null;
+    if (list.length) return { contacts: list };
+    var why = flat.length ? ' It named ' + App.plural(flat.length, 'person', 'people') + ', but ' + (unmatched ? App.plural(unmatched, 'didn\'t match', 'didn\'t match') + ' a company in your list' : '') + (unmatched && noName ? ' and ' : '') + (noName ? noName + ' had no full name' : '') + '.' : '';
+    return {
+      empty: true,
+      message: '<b>GTM Engine couldn\'t confidently name anyone at these companies.</b> That\'s normal for smaller and private companies, where leadership isn\'t widely published, and it\'s better than guessing.' + esc(why) +
+        '<br><br>Next: use <b>Find buyers</b> for one-click LinkedIn searches by title at each company, then add the people you find. Or try fewer, larger companies.',
+      actions: [{ label: 'Open Find buyers', cls: 'ghost', icon: 'search', onClick: function () { setTimeout(function () { A['find-buyers'](); }); } }]
+    };
   }
   function previewContacts(c) {
     var t = S.t, icp = G.icpForScoring(t);
@@ -166,11 +185,12 @@
   A['ai-contacts'] = function () {
     var t = S.t, icp = G.icpForScoring(t);
     if (!icp || !icp.personas.length) { App.toast('Add buyer personas to the ICP first', 'bad'); App.go('#/icp'); return; }
-    var accs = needBuyers(t, icp);
+    var accs = needBuyers(t, icp).sort(function (a, b) { return (a.contactsSuggestedAt ? 1 : 0) - (b.contactsSuggestedAt ? 1 : 0); });
+    var untried = accs.filter(function (a) { return !a.contactsSuggestedAt; }).length;
     if (!accs.length) { App.toast(t.accounts.length ? 'Every fitting account already has a ready buyer' : 'Add or suggest accounts first', 'bad'); if (!t.accounts.length) App.go('#/accounts'); return; }
     App.modal({
-      title: 'Suggest contacts with GTM Engine', sub: 'Suggests named buyers at accounts that fit (or nearly fit) and don\'t have a ready contact yet. ' + App.plural(accs.length, 'account') + ' qualify.',
-      body: '<div class="field"><label>How many accounts?</label><div class="seg" id="sc-a">' + [5, 10, 25].filter(function (n) { return n < accs.length; }).concat([accs.length]).map(function (n, i, arr) { var def = Math.min(10, accs.length), on = n === def || (i === arr.length - 1 && arr.indexOf(def) < 0); return '<button type="button" data-n="' + n + '" class="' + (on ? 'on' : '') + '">' + (i === arr.length - 1 ? 'All ' + n : n) + '</button>'; }).join('') + '</div><span class="hint">Best-fitting accounts first.</span></div>' +
+      title: 'Suggest contacts with GTM Engine', sub: 'Suggests named buyers at accounts that fit (or nearly fit) and don\'t have a ready contact yet. ' + App.plural(accs.length, 'account') + ' qualify' + (untried < accs.length ? ', ' + untried + ' not tried yet (those go first)' : '') + '.',
+      body: '<div class="field"><label>How many accounts?</label><div class="seg" id="sc-a">' + [5, 10, 25].filter(function (n) { return n < accs.length; }).concat([accs.length]).map(function (n, i, arr) { var def = Math.min(10, accs.length), on = n === def || (i === arr.length - 1 && arr.indexOf(def) < 0); return '<button type="button" data-n="' + n + '" class="' + (on ? 'on' : '') + '">' + (i === arr.length - 1 ? 'All ' + n : n) + '</button>'; }).join('') + '</div><span class="hint">Best-fitting accounts first. Up to 15 are sent per request; run it again for the next ones.</span></div>' +
         '<div class="field"><label>People per account</label><div class="seg" id="sc-p">' + [1, 2, 3].map(function (n) { return '<button type="button" data-n="' + n + '" class="' + (n === 2 ? 'on' : '') + '">' + n + '</button>'; }).join('') + '</div></div>' +
         '<div class="small muted">Names and titles only. GTM Engine never guesses email addresses.</div>',
       onOpen: function (mm) {
@@ -179,7 +199,8 @@
       actions: [{ label: 'Cancel', cls: 'ghost' }, {
         label: 'Suggest contacts', cls: 'primary', icon: 'sparkle', onClick: function (mm) {
           var na = +(mm.body.querySelector('#sc-a .on') || {}).getAttribute('data-n') || 10, per = +(mm.body.querySelector('#sc-p .on') || {}).getAttribute('data-n') || 2;
-          var pick = accs.slice(0, na);
+          var pick = accs.slice(0, Math.min(na, 15));
+          pick.forEach(function (a) { a.contactsSuggestedAt = G.now(); }); App.save();
           setTimeout(function () {
             App.askClaude({ title: 'Suggested contacts', sub: 'Up to ' + per + ' per account at ' + App.plural(pick.length, 'account'), basis: 'ICP personas and ' + App.plural(pick.length, 'account'), prompt: contactsPrompt(t, icp, pick, per), clean: function (d) { return cleanContacts(d, pick); }, preview: previewContacts, apply: applyContacts, applyLabel: 'Add selected' });
           });

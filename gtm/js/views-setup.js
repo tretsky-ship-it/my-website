@@ -42,7 +42,7 @@
       return '<div class="stack">' +
         '<div class="next"><span class="ico">' + I(hero.icon) + '</span><div><div class="eyebrow">' + esc(hero.eyebrow) + '</div><h2>' + esc(hero.title) + '</h2><p>' + esc(hero.body) + '</p></div><a class="btn primary lg" href="' + hero.href + '">' + esc(hero.cta) + I('arrow') + '</a></div>' +
         '<div class="card"><div class="card-b"><div class="stepper">' + steps.map(function (s, i) {
-          return '<a href="#/' + s.id + '" class="' + (s.done ? 'done' : s.id === firstTodo ? 'cur' : '') + '"><span class="dot">' + (s.done ? '✓' : i + 1) + '</span>' + esc(s.label) + '</a>';
+          return '<a href="#/' + s.id + '" class="' + (s.done ? 'done' : s.id === firstTodo ? 'cur' : s.started ? 'part' : '') + (s.started && !s.done && s.id === firstTodo ? ' part' : '') + '" title="' + esc(s.done ? 'Complete' : s.todo) + '"><span class="dot">' + (s.done ? '✓' : i + 1) + '</span>' + esc(s.label) + (s.done ? '' : '<span class="todo">' + esc(s.started ? 'In progress' : 'Not started') + '</span>') + '</a>';
         }).join('') + '</div></div></div>' +
         '<div class="kpis">' +
           kpi('#/icp', 'Active ICP', icp ? 'v' + icp.v : '—', icp ? 'Approved ' + App.rel(icp.approvedAt) : 'Not approved yet') +
@@ -115,7 +115,7 @@
   }
   App.refreshers.intake = function () {
     var el = document.getElementById('intake'); if (!el) return;
-    var t = S.t, miss = G.intakeMissing(t), all = G.INTAKE.concat([{ path: 'sources', label: 'At least one client source' }]);
+    var t = S.t, miss = G.intakeMissing(t), all = G.INTAKE;
     var done = all.length - miss.length;
     el.innerHTML = '<div class="row" style="justify-content:space-between;margin-bottom:8px"><b>' + done + ' of ' + all.length + ' complete</b>' + (miss.length ? '' : App.badge('ok', 'Ready')) + '</div><div class="meter" style="margin-bottom:14px"><span class="a" style="width:' + (done / all.length * 100) + '%"></span></div>' +
       '<ul class="checklist">' + all.map(function (f) {

@@ -88,7 +88,12 @@
     }
     function show(data) {
       var clean = o.clean(data);
-      if (!clean) { m.setBody('<div class="note bad">' + I('alert') + '<span class="grow">The answer was missing the expected fields.</span></div>'); m.setActions([{ label: 'Close', cls: 'ghost' }, { label: 'Try again', cls: 'primary', onClick: function () { start(); return false; } }]); return; }
+      if (clean && clean.empty) {
+        m.setBody('<div class="note warn">' + I('info') + '<span class="grow">' + clean.message + '</span></div>');
+        m.setActions((clean.actions || []).concat([{ label: 'Try again', cls: 'ghost', onClick: function () { start(); return false; } }, { label: 'Close', cls: 'primary' }]));
+        return;
+      }
+      if (!clean) { m.setBody('<div class="note bad">' + I('alert') + '<span class="grow">GTM Engine\'s answer wasn\'t in a form it could read. Try again; if it keeps happening, ask for fewer at a time.</span></div>'); m.setActions([{ label: 'Close', cls: 'ghost' }, { label: 'Try again', cls: 'primary', onClick: function () { start(); return false; } }]); return; }
       m.setBody(o.preview(clean));
       m.setActions([{ label: 'Ask again', cls: 'ghost', onClick: function () { start(); return false; } }, {
         label: o.applyLabel, cls: 'primary', icon: 'check', onClick: function () {

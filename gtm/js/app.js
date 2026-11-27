@@ -25,18 +25,35 @@
   /* ---------- pilot progress (drives the nav, the stepper and "next step") ---------- */
   App.steps = function (t) {
     var icp = G.activeICP(t), am = G.accountMetrics(t);
-    var miss = G.intakeMissing(t);
+    var miss = G.intakeMissing(t), filled = G.INTAKE.length - miss.length;
     var approvedBatch = t.batches.some(function (b) { return ['approved', 'staged', 'enrolled', 'reconciled'].indexOf(G.batchState(t, b)) > -1; });
-    var draft = G.draftICP(t);
+    var draft = G.draftICP(t), withContacts = t.contacts.length;
+    function list(a) { return a.slice(0, 3).join(', ') + (a.length > 3 ? ' and ' + (a.length - 3) + ' more' : ''); }
     return [
-      { id: 'setup', label: 'Set up the client', done: !miss.length, todo: miss.length + ' intake ' + (miss.length === 1 ? 'item' : 'items') + ' missing', title: 'Finish the client intake', body: 'Record the offer, geography, outreach owner, approver, budget and CRM. Missing: ' + miss.slice(0, 3).map(function (m) { return m.label.toLowerCase(); }).join(', ') + (miss.length > 3 ? ' and ' + (miss.length - 3) + ' more' : '') + '.', cta: 'Complete intake' },
-      { id: 'evidence', label: 'Add evidence', done: t.sources.length > 0 && t.proof.length > 0, title: 'Add client sources and proof', body: 'Upload the deck, call notes and won/lost list, and record which proof can be used publicly. Every ICP criterion and claim will point back to these.', cta: 'Add evidence' },
-      { id: 'icp', label: 'Approve ICP', done: !!icp, title: draft ? 'Review and approve ICP v' + draft.v : 'Draft the ideal customer profile', body: draft ? 'The draft is ready for the sponsor. Approving freezes it, so accounts can be scored against it.' : 'Define target industries, size, triggers, disqualifiers and buyer personas, then set the scoring weights.', cta: draft ? 'Review draft' : 'Start the ICP' },
-      { id: 'accounts', label: 'Source accounts', done: am.counts.eligible > 0, title: t.accounts.length ? 'Research accounts to reach eligibility' : 'Import your first account batch', body: t.accounts.length ? am.counts.research + ' accounts need research before they can be scored as eligible.' : 'Import a small batch from Databar or a CSV. Existing customers and open deals are suppressed automatically.', cta: t.accounts.length ? 'Open workbench' : 'Import accounts' },
-      { id: 'contacts', label: 'Resolve buyers', done: am.coverage.n > 0, title: 'Find buyers at eligible accounts', body: 'Import contacts from Clay or a CSV. Titles are matched to your personas; anything ambiguous lands in a review queue.', cta: 'Import contacts' },
-      { id: 'campaigns', label: 'Approve a batch', done: approvedBatch, title: t.campaigns.length ? 'Draft and approve a campaign batch' : 'Write the campaign brief', body: t.campaigns.length ? 'Draft a batch from ready contacts, review the copy and citations, then get it approved.' : 'Set the objective, persona, CTA and sequence. Drafts use only approved positioning and cited account facts.', cta: t.campaigns.length ? 'Open campaigns' : 'Create campaign' },
-      { id: 'outcomes', label: 'Collect outcomes', done: t.events.length > 0, title: 'Import replies, meetings and deals', body: 'Bring in Smartlead and HubSpot events. Duplicates count once and every reply becomes one owner task.', cta: 'Import outcomes' },
-      { id: 'brief', label: 'Weekly brief', done: t.tests.length > 0, title: 'Send the weekly brief', body: 'Review the funnel, exceptions and spend, then assign one next test with an owner.', cta: 'Open brief' }
+      { id: 'setup', label: 'Set up the client', done: !miss.length, started: filled > 0,
+        todo: miss.length ? 'Still missing: ' + list(miss.map(function (m) { return m.label.toLowerCase(); })) : 'Done',
+        title: 'Finish the client intake', body: 'Record the offer, geography, outreach owner, approver, budget and CRM. Missing: ' + list(miss.map(function (m) { return m.label.toLowerCase(); })) + '.', cta: 'Complete intake' },
+      { id: 'evidence', label: 'Add evidence', done: t.sources.length > 0, started: t.proof.length > 0,
+        todo: !t.sources.length ? 'Add at least one source: a deck, call transcript, notes or won/lost list' : t.proof.length ? 'Done' : 'Done. Adding proof (a result or quote the client allows) is recommended before campaigns',
+        title: 'Add client sources and proof', body: 'Paste a call transcript or upload the deck, notes and won/lost list, and record which proof can be used publicly. Every ICP criterion and claim points back to these.', cta: 'Add evidence' },
+      { id: 'icp', label: 'Approve ICP', done: !!icp, started: !!draft,
+        todo: icp ? 'Done (v' + icp.v + ' approved)' : draft ? 'Draft v' + draft.v + ' is waiting for approval' : 'Create and approve an ICP',
+        title: draft ? 'Review and approve ICP v' + draft.v : 'Draft the ideal customer profile', body: draft ? 'The draft is ready for the sponsor. Approving freezes it, so accounts can be scored against it.' : 'Define target industries, size, triggers, disqualifiers and buyer personas, then set the scoring weights.', cta: draft ? 'Review draft' : 'Start the ICP' },
+      { id: 'accounts', label: 'Source accounts', done: am.counts.eligible > 0, started: t.accounts.length > 0,
+        todo: am.counts.eligible ? 'Done (' + am.counts.eligible + ' eligible)' : t.accounts.length ? App.plural(t.accounts.length, 'account') + ' added, none eligible yet. Most need a dated, sourced trigger: open an account marked "Needs research"' : 'Import or suggest accounts',
+        title: t.accounts.length ? 'Research accounts to reach eligibility' : 'Add your first accounts', body: t.accounts.length ? am.counts.research + ' accounts need research before they count as eligible. Open one to see exactly what is missing.' : 'Let GTM Engine suggest companies that fit the ICP, or import a list. Existing customers and open deals are suppressed automatically.', cta: t.accounts.length ? 'Open workbench' : 'Add accounts' },
+      { id: 'contacts', label: 'Resolve buyers', done: am.coverage.n > 0, started: withContacts > 0,
+        todo: am.coverage.n ? 'Done (' + am.coverage.n + ' eligible accounts have a ready buyer)' : withContacts ? 'Contacts added, but none is ready at an eligible account. Ready = verified email + persona match, at an eligible account' : 'Suggest, find or import contacts',
+        title: 'Find buyers at eligible accounts', body: 'Suggest named buyers, look them up with Find buyers, or import contacts. A contact is ready once it has a verified email and matches a persona.', cta: 'Open contacts' },
+      { id: 'campaigns', label: 'Approve a batch', done: approvedBatch, started: t.campaigns.length > 0,
+        todo: approvedBatch ? 'Done' : t.batches.length ? 'A batch is drafted but not approved yet' : t.campaigns.length ? 'Brief started. Draft a batch, then approve it' : 'Write a campaign brief',
+        title: t.campaigns.length ? 'Draft and approve a campaign batch' : 'Write the campaign brief', body: t.campaigns.length ? 'Draft a batch from ready contacts, review the copy and citations, then get it approved.' : 'Set the objective, persona, CTA and sequence. Drafts use only approved positioning and cited account facts.', cta: t.campaigns.length ? 'Open campaigns' : 'Create campaign' },
+      { id: 'outcomes', label: 'Collect outcomes', done: t.events.length > 0, started: false,
+        todo: t.events.length ? 'Done' : 'Import delivery, reply, meeting or deal events',
+        title: 'Import replies, meetings and deals', body: 'Bring in Smartlead and HubSpot events. Duplicates count once and every reply becomes one owner task.', cta: 'Import outcomes' },
+      { id: 'brief', label: 'Weekly brief', done: t.tests.length > 0, started: false,
+        todo: t.tests.length ? 'Done' : 'Assign one next test with an owner on the Weekly brief',
+        title: 'Send the weekly brief', body: 'Review the funnel, exceptions and spend, then assign one next test with an owner.', cta: 'Open brief' }
     ];
   };
 
@@ -106,9 +123,9 @@
       if (g.group) html += '<div class="nav-label">' + esc(g.group) + '</div>';
       g.items.forEach(function (it) {
         var on = S.route === it.id, st = it.step ? steps[it.step - 1] : null;
-        var lead = it.step ? '<span class="step-dot' + (st.done ? ' done' : firstTodo && firstTodo.id === it.id ? ' cur' : '') + '">' + (st.done ? '✓' : it.step) + '</span>' : '<span class="ico">' + I(it.icon) + '</span>';
+        var lead = it.step ? '<span class="step-dot' + (st.done ? ' done' : st.started ? ' part' : firstTodo && firstTodo.id === it.id ? ' cur' : '') + '">' + (st.done ? '✓' : it.step) + '</span>' : '<span class="ico">' + I(it.icon) + '</span>';
         var n = it.id === 'learning' ? openP : counts[it.id] || 0;
-        html += '<a href="#/' + it.id + '" class="' + (on ? 'on' : '') + '"' + (on ? ' aria-current="page"' : '') + '>' + lead + '<span>' + esc(it.label) + '</span>' + (n && it.id !== 'home' ? '<span class="count' + (att.some(function (a) { return a.route === it.id && a.tone === 'bad'; }) ? ' alert' : '') + '">' + n + '</span>' : '') + '</a>';
+        html += '<a href="#/' + it.id + '" class="' + (on ? 'on' : '') + '"' + (on ? ' aria-current="page"' : '') + (st ? ' title="' + esc((st.done ? 'Complete. ' : st.started ? 'In progress. ' : '') + (st.done ? '' : st.todo)) + '"' : '') + '>' + lead + '<span>' + esc(it.label) + '</span>' + (n && it.id !== 'home' ? '<span class="count' + (att.some(function (a) { return a.route === it.id && a.tone === 'bad'; }) ? ' alert' : '') + '">' + n + '</span>' : '') + '</a>';
       });
     });
     var dark = document.documentElement.getAttribute('data-theme') === 'dark' || (!document.documentElement.getAttribute('data-theme') && matchMedia('(prefers-color-scheme: dark)').matches);

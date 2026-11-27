@@ -211,7 +211,6 @@
       var v = G.get(t, f.path);
       return v === null || v === undefined || String(v).trim() === '';
     });
-    if (!t.sources.length) miss.push({ path: 'sources', label: 'At least one client source (deck, call notes, won/lost list)' });
     return miss;
   };
 
