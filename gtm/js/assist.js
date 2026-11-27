@@ -203,42 +203,73 @@
   A['ai-icp'] = function () { App.suggestICP(); };
 
   /* ================= Campaign brief suggestion ================= */
+  // Drafts the whole brief from the client's sources: objective, persona, proof, pain points (with the
+  // source each came from), hypothesis, CTA, success target and a 3-step sequence.
+  var KPIS = ['Held meetings', 'Positive replies', 'Sourced pipeline'];
   function briefPrompt(t, c) {
-    var icp = G.activeICP(t), per = icp && icp.personas.find(function (p) { return p.id === c.personaId; });
-    var proof = t.proof.find(function (p) { return p.id === c.proofId; });
+    var icp = G.activeICP(t);
+    var personas = icp ? icp.personas : [];
+    var proofs = t.proof.filter(function (p) { return G.proofUsable(t, p).ok; });
     var triggers = G.uniq(t.accounts.map(function (a) { return a.trigger.text; }).filter(Boolean)).slice(0, 8);
-    return 'You are an outbound copywriter for a B2B pilot. Draft a campaign brief and a 2-3 step cold email sequence.\n\n' + clientContext(t) +
-      '\n\nTarget persona: ' + (per ? per.name + ' (titles: ' + per.titles.join(', ') + ')\nLikely pain (inference, never assert it): ' + (per.pain || 'unknown') + '\nApproved message: ' + (per.message || '') : 'not chosen') +
-      (icp ? '\nICP industries: ' + icp.industries.values.join(', ') + '; triggers: ' + icp.triggers.keywords.join(', ') : '') +
-      (triggers.length ? '\nExample account triggers: ' + triggers.join('; ') : '') +
-      (proof ? '\nProof the campaign will cite (only via the {{proof}} token): ' + proof.text : '') +
-      '\n\nRules for the email copy: use these tokens exactly where relevant and nothing else in braces: {{first_name}}, {{company}}, {{personalization}} (a sourced sentence about the account, filled in automatically), {{question}} (the persona\'s discovery question), {{proof}}, {{cta}}, {{sender_name}}. Never state a fact about the recipient\'s company that is not inside {{personalization}}. Keep step 1 under 90 words, plain text, no links.' +
-      '\n\nReply with ONLY a JSON object:\n{"name":"campaign name","objective":"business objective","pain":"pain point and why we believe it","hypothesis":"If we tell X about Y, they will Z","cta":"one-line call to action","successCriterion":"measurable target for the first 25 delivered","steps":[{"subject":"...","body":"...","delayDays":0},{"subject":"...","body":"...","delayDays":3}]}';
+    var others = t.campaigns.filter(function (x) { return x !== c && x.hypothesis; }).map(function (x) { return '- ' + x.name + ': ' + x.hypothesis; });
+    return 'You are a B2B outbound strategist and copywriter. Using the client sources below, draft a complete campaign brief and a 3-step cold email sequence. Ground every pain point in what the sources actually say, and name the source title it came from.\n\n' + clientContext(t) +
+      '\n\nBuyer personas to choose from (pick the one the sources give the strongest case for):\n' + (personas.length ? personas.map(function (p, i) { return 'P' + (i + 1) + ': ' + p.name + ' (' + p.priority + '), titles ' + p.titles.slice(0, 5).join(', ') + (p.pain ? '; believed pain: ' + p.pain : '') + (p.message ? '; approved message: ' + p.message : ''); }).join('\n') : 'none') +
+      '\n\nApproved public proof to choose from (or none):\n' + (proofs.length ? proofs.map(function (p, i) { return 'R' + (i + 1) + ': ' + p.text; }).join('\n') : 'none available') +
+      (icp ? '\n\nICP: industries ' + icp.industries.values.join(', ') + '; buying signals ' + icp.triggers.keywords.join(', ') : '') +
+      (triggers.length ? '\nExample account triggers on file: ' + triggers.join('; ') : '') +
+      (others.length ? '\nExisting campaigns (test a different angle):\n' + others.join('\n') : '') +
+      (c.personaId && personas.some(function (p) { return p.id === c.personaId; }) ? '\nThe operator already chose persona P' + (personas.findIndex(function (p) { return p.id === c.personaId; }) + 1) + '; keep it unless the sources clearly argue otherwise.' : '') +
+      '\n\nEmail rules: use only these tokens, exactly: {{first_name}}, {{company}}, {{personalization}} (a sourced fact about the account, filled in automatically), {{question}} (the persona\'s discovery question), {{proof}}, {{cta}}, {{sender_name}}. Never state a fact about the recipient\'s company outside {{personalization}}. Never assert their pain: ask about it. Step 1 under 90 words, plain text, no links. Steps 2 and 3 shorter, each adding a new angle, 3 and 5 days apart.' +
+      '\n\nReply with ONLY a JSON object:\n{"name":"short campaign name","objective":"business objective in one sentence","persona":"P1","proof":"R1 or none","painPoints":[{"pain":"specific pain in the buyer\'s words","source":"source title it came from"}],"hypothesis":"If we tell X about Y, they will Z","cta":"one-line low-friction call to action","kpi":"Held meetings, Positive replies or Sourced pipeline","successCriterion":"measurable target for the first 25 delivered","windowDays":30,"steps":[{"subject":"...","body":"...","delayDays":0},{"subject":"...","body":"...","delayDays":3},{"subject":"...","body":"...","delayDays":5}]}';
   }
   function cleanBrief(d) {
     if (!d || typeof d !== 'object') return null;
-    var c = { name: str(d.name, 80), objective: str(d.objective, 400), pain: str(d.pain, 400), hypothesis: str(d.hypothesis, 400), cta: str(d.cta, 200), successCriterion: str(d.successCriterion, 200),
-      steps: (Array.isArray(d.steps) ? d.steps : []).slice(0, 4).map(function (s, i) { return { subject: str(s && s.subject, 120), body: str(s && s.body, 2000).replace(/\\n/g, '\n'), delayDays: i ? (int(s && s.delayDays) || 3) : 0 }; }).filter(function (s) { return s.body; }) };
+    var t = S.t, icp = G.activeICP(t), personas = icp ? icp.personas : [];
+    var proofs = t.proof.filter(function (p) { return G.proofUsable(t, p).ok; });
+    var pm = String(d.persona || '').match(/P(\d+)/i), rm = String(d.proof || '').match(/R(\d+)/i);
+    var per = pm ? personas[+pm[1] - 1] : null, pr = rm ? proofs[+rm[1] - 1] : null;
+    var pains = (Array.isArray(d.painPoints) ? d.painPoints : []).slice(0, 4).map(function (x) { return typeof x === 'string' ? { pain: str(x, 200), source: '' } : { pain: str(x && x.pain, 200), source: str(x && x.source, 120) }; }).filter(function (x) { return x.pain; });
+    var c = {
+      name: str(d.name, 80), objective: str(d.objective, 400), hypothesis: str(d.hypothesis, 400), cta: str(d.cta, 200), successCriterion: str(d.successCriterion, 200),
+      personaId: per ? per.id : null, personaName: per ? per.name : '', proofId: pr ? pr.id : null, proofText: pr ? pr.text : '',
+      pains: pains, pain: pains.length ? pains.map(function (x) { return x.pain + (x.source ? ' (source: ' + x.source + ')' : ''); }).join('; ') : str(d.pain, 400),
+      kpi: KPIS.find(function (k) { return k.toLowerCase() === String(d.kpi || '').toLowerCase(); }) || '', windowDays: int(d.windowDays),
+      steps: (Array.isArray(d.steps) ? d.steps : []).slice(0, 4).map(function (s, i) { return { subject: str(s && s.subject, 120), body: str(s && s.body, 2000).replace(/\\n/g, '\n'), delayDays: i ? (int(s && s.delayDays) || 3) : 0 }; }).filter(function (s) { return s.body; })
+    };
     return c.hypothesis || c.steps.length ? c : null;
   }
-  var BRIEF_FIELDS = [['name', 'Campaign name'], ['objective', 'Business objective'], ['pain', 'Pain point and evidence'], ['hypothesis', 'Hypothesis'], ['cta', 'Call to action'], ['successCriterion', 'Success criterion']];
-  A['ai-brief'] = function (el) {
-    var t = S.t, c = G.campaignById(t, el.getAttribute('data-id'));
+  var BRIEF_FIELDS = [['name', 'Campaign name'], ['objective', 'Business objective'], ['hypothesis', 'Hypothesis'], ['cta', 'Call to action'], ['kpi', 'Primary KPI'], ['successCriterion', 'Success criterion']];
+  App.suggestBrief = function (cid, isNew) {
+    var t = S.t, c = G.campaignById(t, cid);
     if (!G.activeICP(t)) { App.toast('Approve an ICP first', 'bad'); return; }
+    var srcN = t.sources.filter(function (s) { return !s.withdrawn && s.content; }).length;
     ask({
-      title: 'Suggest a brief and sequence', sub: 'Drafted from the intake, the persona and the approved ICP. Personalization still comes only from sourced account facts.', basis: 'intake, persona, ICP', prompt: briefPrompt(t, c), clean: cleanBrief,
+      title: isNew ? 'Draft the campaign with GTM Engine' : 'Suggest a brief and sequence',
+      sub: 'Built from your sources, personas, proof and ICP. Untick anything you don\'t want; everything stays editable.' + (srcN ? '' : ' Tip: paste call transcripts under Evidence & proof for sharper pain points.'),
+      basis: App.plural(srcN, 'source with text', 'sources with text') + ', personas, proof and ICP', prompt: briefPrompt(t, c), clean: cleanBrief,
       preview: function (b) {
-        return '<div class="small muted">Untick anything you want to keep as it is. Ticked fields replace what is in the brief now.</div>' +
-          '<div class="grid2">' + BRIEF_FIELDS.filter(function (f) { return b[f[0]]; }).map(function (f) { return pick(f[0], f[1], '<div class="small">' + esc(b[f[0]]) + '</div>'); }).join('') + '</div>' +
-          (b.steps.length ? pick('steps', 'Email sequence (' + b.steps.length + ' steps)', b.steps.map(function (s, i) { return '<div class="email" style="margin-top:8px"><div class="subj"><small>Step ' + (i + 1) + (s.delayDays ? ' · +' + s.delayDays + 'd' : '') + '</small>' + esc(s.subject) + '</div><div class="body">' + esc(s.body) + '</div></div>'; }).join('')) : '');
+        var html = '<div class="small muted">' + (isNew ? 'Everything is ticked. Untick what you\'d rather write yourself.' : 'Ticked fields replace what is in the brief now.') + '</div><div class="grid2">' +
+          BRIEF_FIELDS.filter(function (f) { return b[f[0]]; }).map(function (f) { return pick(f[0], f[1], '<div class="small">' + esc(b[f[0]]) + '</div>'); }).join('') +
+          (b.personaId ? pick('personaId', 'Persona', '<div class="small">' + esc(b.personaName) + '</div>') : '') +
+          pick('proofId', 'Proof to cite', '<div class="small">' + (b.proofId ? esc(b.proofText) : '<span class="muted">None. No usable proof fits, so emails won\'t cite results.</span>') + '</div>') +
+          '</div>';
+        if (b.pains.length || b.pain) html += pick('pain', 'Pain points from your sources', b.pains.length ? '<ul style="margin:0;padding-left:18px">' + b.pains.map(function (x) { return '<li class="small">' + esc(x.pain) + (x.source ? ' <span class="muted">· ' + esc(x.source) + '</span>' : ' <span class="faint">· no source named</span>') + '</li>'; }).join('') + '</ul>' : '<div class="small">' + esc(b.pain) + '</div>');
+        if (b.steps.length) html += pick('steps', 'Email sequence (' + b.steps.length + ' steps)', b.steps.map(function (s, i) { return '<div class="email" style="margin-top:8px"><div class="subj"><small>Step ' + (i + 1) + (s.delayDays ? ' · +' + s.delayDays + 'd' : '') + '</small>' + esc(s.subject) + '</div><div class="body">' + esc(s.body) + '</div></div>'; }).join(''));
+        return html;
       },
-      applyLabel: 'Use in brief',
+      applyLabel: isNew ? 'Use this draft' : 'Use in brief',
       apply: function (b, pk) {
         BRIEF_FIELDS.forEach(function (f) { if (pk[f[0]] && b[f[0]]) c[f[0]] = b[f[0]]; });
+        if (pk.personaId && b.personaId) c.personaId = b.personaId;
+        if (pk.proofId) c.proofId = b.proofId;
+        if (pk.pain && b.pain) c.pain = b.pain;
+        if (b.windowDays && (pk.kpi || isNew)) c.windowDays = b.windowDays;
         if (pk.steps && b.steps.length) c.steps = b.steps;
-        G.log(t, 'GTM Engine (suggestion)', 'Suggested campaign brief', c.name);
-        App.save(); App.render(); App.toast('Brief updated. Check the live preview, then draft a batch.');
+        c.channel = 'Email';
+        G.log(t, 'GTM Engine (suggestion)', isNew ? 'Drafted new campaign brief' : 'Suggested campaign brief', c.name);
+        App.save(); App.render(); App.toast('Brief filled in. Review it, check the live preview, then draft a batch.');
       }
     });
   };
+  A['ai-brief'] = function (el) { App.suggestBrief(el.getAttribute('data-id'), false); };
 })();

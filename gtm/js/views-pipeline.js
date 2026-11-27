@@ -371,8 +371,17 @@
   A['cmp-new'] = function () {
     var t = S.t;
     if (!G.activeICP(t)) { App.toast('Approve an ICP first', 'bad'); App.go('#/icp'); return; }
-    var c = G.blankCampaign(t); c.name = 'New campaign';
-    t.campaigns.push(c); G.log(t, 'Operator', 'Created campaign brief'); App.save(); App.go('#/campaigns/' + c.id + '/brief');
+    var srcN = t.sources.filter(function (x) { return !x.withdrawn && x.content; }).length;
+    function create(draft) {
+      var c = G.blankCampaign(t); c.name = 'New campaign';
+      t.campaigns.push(c); G.log(t, 'Operator', 'Created campaign brief'); App.save(); App.go('#/campaigns/' + c.id + '/brief');
+      if (draft) setTimeout(function () { App.suggestBrief(c.id, true); }, 60);
+    }
+    App.modal({
+      title: 'New campaign', sub: 'GTM Engine can draft the whole brief from your sources: objective, persona, pain points, hypothesis, call to action, proof, success target and a 3-step email sequence. You can change any of it.',
+      body: (srcN ? '<div class="note ok">' + I('check') + '<span class="grow">' + App.plural(srcN, 'source with text', 'sources with text') + ' (transcripts, notes) will be used for the pain points.</span></div>' : '<div class="note warn">' + I('info') + '<span class="grow">No transcripts or notes yet, so the draft relies on the offer, ICP and personas. For sharper pain points, paste a call transcript under Evidence & proof first.</span></div>'),
+      actions: [{ label: 'Start blank', cls: 'ghost', onClick: function () { create(false); } }, { label: 'Draft it with GTM Engine', cls: 'primary', icon: 'sparkle', onClick: function () { create(true); } }]
+    });
   };
   function detail(t, c, tab) {
     var bs = t.batches.filter(function (b) { return b.campaignId === c.id; });
@@ -387,7 +396,9 @@
     function f(l, k, o) { o = o || {}; o.refresh = 'cmp-preview'; o.id = 'cb-' + k; return '<div class="field' + (o.full ? ' full' : '') + '"><label for="cb-' + k + '">' + esc(l) + '</label>' + (o.text ? App.bindText(P + k, o) : o.select ? App.bindSelect(P + k, o.select, o) : App.bindInput(P + k, o)) + (o.hint ? '<span class="hint">' + o.hint + '</span>' : '') + '</div>'; }
     var proofOpts = [{ value: '', label: 'No proof' }].concat(t.proof.map(function (p) { var u = G.proofUsable(t, p); return { value: p.id, label: (u.ok ? '✓ ' : '⚠ ' + u.why + ': ') + p.text.slice(0, 70) }; }));
     var miss = briefMissing(t, c);
+    var emptyBrief = !c.hypothesis && !c.objective && !locked;
     return '<div class="split wide-side"><div class="stack">' +
+      (emptyBrief ? '<div class="next" style="padding:16px 18px"><span class="ico">' + I('sparkle') + '</span><div><h2 style="font-size:16px">Let GTM Engine fill this brief</h2><p>Objective, persona, pain points from your sources, hypothesis, call to action, proof and a 3-step sequence. You can edit everything.</p></div><button class="btn primary" data-act="ai-brief" data-id="' + c.id + '">' + I('sparkle') + 'Draft it</button></div>' : '') +
       (locked ? '<div class="note info">' + I('info') + '<span class="grow">Batches already drafted keep their own frozen copy. Edits here apply to the next batch you draft.</span></div>' : '') +
       '<div class="card"><div class="card-h"><h2>Brief</h2><span id="cmp-badge"></span><button class="btn sm" data-act="ai-brief" data-id="' + c.id + '">' + I('sparkle') + 'Suggest with GTM Engine</button></div><div class="card-b"><div class="fields">' +
         f('Campaign name', 'name') + f('Owner', 'owner', { hint: 'Gets replies when the CRM has no owner.' }) +
