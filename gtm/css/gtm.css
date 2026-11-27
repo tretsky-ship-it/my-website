@@ -536,3 +536,4 @@ svg { flex: none; vertical-align: middle; }
   font-size: 13px; line-height: 1.45; font-weight: 500; box-shadow: var(--shadow-lg); pointer-events: none; text-transform: none; letter-spacing: 0;
 }
 .crit .ttl b .tip, .label .tip { vertical-align: 0; }
+@media (min-width: 861px) { .topbar h1 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } }

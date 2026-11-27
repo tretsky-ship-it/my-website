@@ -49,6 +49,7 @@
     if (won.length) out.push('Existing customers: ' + won.join('; '));
     return out.filter(Boolean).join('\n');
   }
+  App.askClaude = function (o) { return ask(o); };
   App.canSuggest = function (t) { return !!(t.profile.website || t.profile.offer || t.sources.length); };
 
   /* ---------- generic ask-Claude modal ---------- */

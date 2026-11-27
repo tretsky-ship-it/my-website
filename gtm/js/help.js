@@ -65,6 +65,13 @@
     'cb-budget': 'Optional spend cap for this campaign alone, in dollars.',
     'ba-by': 'Who is approving this batch. Their name is recorded with exactly what they approved.',
 
+    'sg-focus': 'Optional. Narrow the suggestions, e.g. "only Ohio and Indiana", "family-owned", "food packaging plants". Leave blank to use the ICP as is.',
+    'ca-n': 'The person\'s full name as it appears on their profile.',
+    'ca-t': 'Their job title as shown on LinkedIn or the company site. It\'s matched to your buyer personas automatically.',
+    'ca-e': 'Their work email if you have it. Don\'t guess email formats: guessed addresses bounce and hurt your sending reputation. Leave blank and find it later.',
+    'ca-v': 'Whether the email has been checked by a verification tool. Only verified emails can be included in a batch.',
+    'ca-l': 'Optional link to their LinkedIn profile, so anyone can double-check who this is.',
+
     /* Imports */
     'iw-src': 'Where the list came from, e.g. "Databar export, Nov 20". It\'s kept on each account so you can trace it later.',
     'iw-p': 'Which tool found these contacts, e.g. Clay or Databar.',

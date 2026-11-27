@@ -17,13 +17,13 @@
   V.accounts = {
     title: 'Accounts',
     header: function () {
-      return { title: 'Prospect workbench', actions: (S.t.accounts.length ? '<button class="btn hide-sm" data-act="acc-sheet">' + I('download') + 'Enrichment sheet</button><button class="btn" data-act="acc-spend">' + I('shield') + 'Approve enrichment spend</button>' : '') + '<button class="btn primary" data-act="acc-import">' + I('upload') + 'Import accounts</button>' };
+      return { title: 'Prospect workbench', actions: (S.t.accounts.length ? '<button class="btn hide-sm" data-act="acc-sheet">' + I('download') + 'Export sheet</button><button class="btn" data-act="acc-spend" title="Approve enrichment spend">' + I('shield') + 'Approve spend</button>' : '') + '<button class="btn" data-act="ai-accounts">' + I('sparkle') + 'Suggest accounts</button><button class="btn primary" data-act="acc-import">' + I('upload') + 'Import</button>' };
     },
     render: function (param) {
       var t = S.t, icp = G.icpForScoring(t), act = G.activeICP(t);
       var conflicts = t.conflicts.filter(function (c) { return !c.resolved; });
       if (!t.accounts.length && !conflicts.length) {
-        return (!act ? icpNote(t) : '') + App.emptyState('accounts', 'Import a small first batch', 'Start with 25–50 companies from Databar or any CSV. Domains are normalised, re-imports never duplicate, existing customers and open deals are suppressed, and subsidiaries go to manual review.', '<button class="btn primary" data-act="acc-import">' + I('upload') + 'Import accounts</button><button class="btn" data-act="acc-template">' + I('download') + 'CSV template</button>');
+        return (!act ? icpNote(t) : '') + App.emptyState('accounts', 'Import a small first batch', 'No list yet? Let Claude suggest companies that fit your ICP, choosing how many. Or start with 25–50 companies from Databar or any CSV. Domains are normalised, re-imports never duplicate, existing customers and open deals are suppressed, and subsidiaries go to manual review.', (G.icpForScoring(t) ? '<button class="btn primary" data-act="ai-accounts">' + I('sparkle') + 'Suggest accounts with Claude</button><button class="btn" data-act="acc-import">' + I('upload') + 'Import a list</button>' : '<button class="btn primary" data-act="acc-import">' + I('upload') + 'Import accounts</button>') + '<button class="btn" data-act="acc-template">' + I('download') + 'CSV template</button>');
       }
       var am = G.accountMetrics(t), tab = param === 'conflicts' ? 'conflicts' : 'list';
       var f = S.ui.af || 'all';
@@ -63,7 +63,7 @@
         var s = sc[a.id], nc = t.contacts.filter(function (c) { return c.accountId === a.id; });
         var ready = nc.filter(function (c) { return G.contactState(t, c) === 'ready'; }).length;
         var why = s.status === 'excluded' ? s.reasons[0] : s.status === 'research' ? s.research[0] : '';
-        return '<tr class="click" data-act="acc-open" data-id="' + a.id + '" tabindex="0"><td class="name"><b>' + esc(a.name) + '</b><span>' + esc(a.domain) + (a.crmId ? ' · HS ' + esc(a.crmId) : '') + '</span></td>' +
+        return '<tr class="click" data-act="acc-open" data-id="' + a.id + '" tabindex="0"><td class="name"><b>' + esc(a.name) + (a.suggested ? ' <span class="badge info plain" title="Suggested by Claude; confirm the details">Suggested</span>' : '') + '</b><span>' + esc(a.domain) + (a.crmId ? ' · HS ' + esc(a.crmId) : '') + '</span></td>' +
           '<td>' + esc(a.industry || '—') + '</td><td class="num">' + App.num(a.employees) + '</td><td>' + esc(a.country || '—') + '</td>' +
           '<td style="max-width:240px">' + (a.trigger.text ? '<span title="' + esc(a.trigger.text) + '">' + esc(a.trigger.text.length > 42 ? a.trigger.text.slice(0, 40) + '…' : a.trigger.text) + '</span><br><small class="muted">' + (a.trigger.date ? App.rel(a.trigger.date) : 'undated') + (a.trigger.url ? ' · sourced' : ' · no source') + '</small>' : '<span class="faint">—</span>') + '</td>' +
           '<td>' + scoreBar(s) + '</td><td>' + App.stateBadge(G.ACCOUNT_STATES, s.status) + (why ? '<br><small class="muted">' + esc(why) + '</small>' : '') + '</td>' +
@@ -149,7 +149,7 @@
         '<div class="field full stack sm">' + App.bindSwitch(P + '.flags.customer', 'Existing customer', { refresh: 'acc' }) + App.bindSwitch(P + '.flags.openOpp', 'Active opportunity in CRM', { refresh: 'acc' }) + '</div>' +
         '<div class="field full"><label>Research notes</label>' + App.bindText(P + '.notes', { refresh: 'acc', rows: 2, placeholder: 'What you checked and where' }) + '</div>' +
       '</div></div></div>' +
-      '<div class="card"><div class="card-h"><h3>Contacts</h3><span class="badge muted plain">' + cs.length + '</span></div><div class="list">' + (cs.length ? cs.map(function (c) { var st = G.contactState(t, c, icp); return '<div class="li"><span class="grow"><b>' + esc(c.name) + '</b><span>' + esc(c.title) + ' · ' + esc(c.email || 'no email') + '</span></span>' + App.stateBadge(G.CONTACT_STATES, st) + '</div>'; }).join('') : '<div class="li muted small">No contacts yet. Approve enrichment spend for eligible accounts, then import contacts.</div>') + '</div></div>' +
+      '<div class="card"><div class="card-h"><h3>Contacts</h3><span class="badge muted plain">' + cs.length + '</span><span class="grow"></span><button class="btn sm" data-act="contact-add" data-acc="' + a.id + '">' + I('plus') + 'Add contact</button></div><div class="list">' + (cs.length ? cs.map(function (c) { var st = G.contactState(t, c, icp); return '<div class="li"><span class="grow"><b>' + esc(c.name) + '</b><span>' + esc(c.title) + ' · ' + esc(c.email || 'no email') + '</span></span>' + App.stateBadge(G.CONTACT_STATES, st) + '</div>'; }).join('') : '<div class="li muted small">No contacts yet. Approve enrichment spend for eligible accounts, then import contacts.</div>') + '</div></div>' +
       '<div class="card"><div class="card-h"><h3>Provenance</h3></div><div class="card-b small stack sm"><div>Imported from <b>' + esc(a.importedFrom || 'CSV') + '</b> · ' + App.fmtDT(a.createdAt) + '</div>' +
         (a.mergeLog.length ? a.mergeLog.slice().reverse().map(function (m) { return '<div class="muted">' + App.fmtDT(m.at) + ' · ' + esc(m.source) + ': ' + esc(m.changes.join('; ')) + '</div>'; }).join('') : '<div class="muted">No merges or updates since import.</div>') + '</div></div>' +
       '<div class="row"><button class="btn danger sm" data-act="acc-suppress" data-id="' + a.id + '">' + I('x') + 'Add domain to do-not-contact</button></div>';
@@ -249,11 +249,11 @@
   var REVIEW = ['ambiguous-persona', 'no-persona', 'unverified', 'conflicting-employment', 'missing-email', 'unmatched'];
   V.contacts = {
     title: 'Contacts',
-    header: function () { return { title: 'Contacts', actions: '<button class="btn hide-sm" data-act="con-template">' + I('download') + 'Template</button><button class="btn primary" data-act="con-import">' + I('upload') + 'Import contacts</button>' }; },
+    header: function () { return { title: 'Contacts', actions: '<button class="btn hide-sm" data-act="con-template">' + I('download') + 'Template</button>' + (S.t.accounts.length ? '<button class="btn" data-act="find-buyers">' + I('search') + 'Find buyers</button>' : '') + '<button class="btn primary" data-act="con-import">' + I('upload') + 'Import contacts</button>' }; },
     render: function (param) {
       var t = S.t;
       if (param === 'review') S.ui.cf = 'review';
-      if (!t.contacts.length) return App.emptyState('contacts', 'Resolve the buyers', t.accounts.length ? 'Import contacts from Clay or a CSV with name, title, work email, verification result and retrieval date. Titles are matched to your personas; anything ambiguous comes back here for a decision.' : 'Import accounts first. Contacts are matched to accounts by company domain or email domain.', t.accounts.length ? '<button class="btn primary" data-act="con-import">' + I('upload') + 'Import contacts</button><button class="btn" data-act="con-template">' + I('download') + 'CSV template</button>' : '<a class="btn primary" href="#/accounts">Go to accounts</a>');
+      if (!t.contacts.length) return App.emptyState('contacts', 'Resolve the buyers', t.accounts.length ? 'Import contacts from Clay or a CSV with name, title, work email, verification result and retrieval date. Titles are matched to your personas; anything ambiguous comes back here for a decision.' : 'Import accounts first. Contacts are matched to accounts by company domain or email domain.', t.accounts.length ? '<button class="btn primary" data-act="find-buyers">' + I('search') + 'Find buyers</button><button class="btn" data-act="con-import">' + I('upload') + 'Import contacts</button><button class="btn" data-act="con-template">' + I('download') + 'CSV template</button>' : '<a class="btn primary" href="#/accounts">Go to accounts</a>');
       var icp = G.icpForScoring(t), counts = { all: t.contacts.length, ready: 0, review: 0, blocked: 0 };
       t.contacts.forEach(function (c) { var s = G.contactState(t, c, icp); if (s === 'ready') counts.ready++; else if (REVIEW.indexOf(s) > -1) counts.review++; else counts.blocked++; });
       var f = S.ui.cf || 'all';
