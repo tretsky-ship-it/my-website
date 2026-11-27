@@ -249,11 +249,11 @@
   var REVIEW = ['ambiguous-persona', 'no-persona', 'unverified', 'conflicting-employment', 'missing-email', 'unmatched'];
   V.contacts = {
     title: 'Contacts',
-    header: function () { return { title: 'Contacts', actions: '<button class="btn hide-sm" data-act="con-template">' + I('download') + 'Template</button>' + (S.t.accounts.length ? '<button class="btn" data-act="find-buyers">' + I('search') + 'Find buyers</button>' : '') + '<button class="btn primary" data-act="con-import">' + I('upload') + 'Import contacts</button>' }; },
+    header: function () { return { title: 'Contacts', actions: '<button class="btn hide-sm" data-act="con-template">' + I('download') + 'Template</button>' + (S.t.accounts.length ? '<button class="btn" data-act="ai-contacts">' + I('sparkle') + 'Suggest contacts</button><button class="btn" data-act="find-buyers">' + I('search') + 'Find buyers</button>' : '') + '<button class="btn primary" data-act="con-import">' + I('upload') + 'Import contacts</button>' }; },
     render: function (param) {
       var t = S.t;
       if (param === 'review') S.ui.cf = 'review';
-      if (!t.contacts.length) return App.emptyState('contacts', 'Resolve the buyers', t.accounts.length ? 'Import contacts from Clay or a CSV with name, title, work email, verification result and retrieval date. Titles are matched to your personas; anything ambiguous comes back here for a decision.' : 'Import accounts first. Contacts are matched to accounts by company domain or email domain.', t.accounts.length ? '<button class="btn primary" data-act="find-buyers">' + I('search') + 'Find buyers</button><button class="btn" data-act="con-import">' + I('upload') + 'Import contacts</button><button class="btn" data-act="con-template">' + I('download') + 'CSV template</button>' : '<a class="btn primary" href="#/accounts">Go to accounts</a>');
+      if (!t.contacts.length) return App.emptyState('contacts', 'Resolve the buyers', t.accounts.length ? 'Let GTM Engine suggest named buyers at your accounts, look them up yourself with Find buyers, or import contacts from Clay or a CSV. Titles are matched to your personas; anything ambiguous comes back here for a decision.' : 'Import accounts first. Contacts are matched to accounts by company domain or email domain.', t.accounts.length ? '<button class="btn primary" data-act="ai-contacts">' + I('sparkle') + 'Suggest contacts with GTM Engine</button><button class="btn" data-act="find-buyers">' + I('search') + 'Find buyers</button><button class="btn" data-act="con-import">' + I('upload') + 'Import contacts</button><button class="btn" data-act="con-template">' + I('download') + 'CSV template</button>' : '<a class="btn primary" href="#/accounts">Go to accounts</a>');
       var icp = G.icpForScoring(t), counts = { all: t.contacts.length, ready: 0, review: 0, blocked: 0 };
       t.contacts.forEach(function (c) { var s = G.contactState(t, c, icp); if (s === 'ready') counts.ready++; else if (REVIEW.indexOf(s) > -1) counts.review++; else counts.blocked++; });
       var f = S.ui.cf || 'all';
@@ -279,8 +279,8 @@
       var i = t.contacts.indexOf(c), a = G.accountById(t, c.accountId), s = G.contactState(t, c, icp), pm = G.contactPersona(c, icp);
       var auto = pm.manual ? '' : pm.id ? (icp.personas.find(function (p) { return p.id === pm.id; }) || {}).name : pm.ids.length > 1 ? 'Ambiguous' : 'No match';
       var popts = [{ value: '', label: 'Auto: ' + (auto || '—') }].concat(icp ? icp.personas.map(function (p) { return { value: p.id, label: p.name || 'Untitled' }; }) : []);
-      var fix = s === 'conflicting-employment' ? '<button class="btn sm" data-act="con-confirm" data-i="' + i + '">Confirm employment</button>' : '';
-      return '<tr><td class="name"><b>' + esc(c.name) + '</b><span>' + esc(c.title || 'No title') + '</span></td><td>' + (a ? '<a href="#" data-act="acc-open" data-id="' + a.id + '">' + esc(a.name) + '</a>' : '—') + '</td>' +
+      var fix = s === 'conflicting-employment' ? '<button class="btn sm" data-act="con-confirm" data-i="' + i + '">Confirm employment</button>' : (s === 'missing-email' || s === 'unverified') ? '<button class="btn sm" data-act="con-email" data-i="' + i + '">' + (s === 'missing-email' ? 'Add email' : 'Update email') + '</button>' : '';
+      return '<tr><td class="name"><b>' + esc(c.name) + (c.suggested ? ' <span class="badge info plain" title="Suggested by GTM Engine; verify the role and find a work email">Suggested</span>' : '') + '</b><span>' + esc(c.title || 'No title') + (c.linkedinSearch ? ' · <a href="' + esc(c.linkedinSearch) + '" target="_blank" rel="noopener">verify</a>' : '') + '</span></td><td>' + (a ? '<a href="#" data-act="acc-open" data-id="' + a.id + '">' + esc(a.name) + '</a>' : '—') + '</td>' +
         '<td><span class="mono">' + esc(c.email || '—') + '</span><br><small class="' + (G.isVerified(c.verification) ? 'muted' : 'faint') + '">' + esc(c.verification || 'unverified') + '</small></td>' +
         '<td style="min-width:170px">' + (icp ? App.bindSelect('contacts.' + i + '.personaId', popts, { cls: 'sm', refresh: 'con-table', label: 'Persona for ' + c.name }) : '—') + '</td>' +
         '<td>' + App.stateBadge(G.CONTACT_STATES, s) + '</td><td class="small muted nowrap">' + esc(c.provider || '—') + '<br>' + App.fmtDate(c.retrievedAt) + '</td>' +
@@ -291,6 +291,24 @@
   A['con-filter'] = function (el) { S.ui.cf = el.getAttribute('data-f'); if (S.param) App.go('#/contacts'); else App.render(); };
   A['con-template'] = function () { App.download('contacts-template.csv', CON_TEMPLATE); };
   A['con-confirm'] = function (el) { var c = S.t.contacts[+el.getAttribute('data-i')]; c.employmentConfirmed = true; G.log(S.t, 'Operator', 'Confirmed employment', c.name + ' · ' + c.email); App.save(); App.refresh('con-table'); };
+  A['con-email'] = function (el) {
+    var t = S.t, c = t.contacts[+el.getAttribute('data-i')], a = G.accountById(t, c.accountId);
+    App.modal({
+      title: (c.email ? 'Update email for ' : 'Add email for ') + c.name, sub: esc(c.title || '') + (a ? ' at ' + esc(a.name) : ''),
+      body: '<div class="fields"><div class="field"><label for="ce-e">Work email</label><input id="ce-e" type="email" autofocus value="' + esc(c.email || '') + '" placeholder="name@' + esc(a ? a.domain : 'company.com') + '"></div>' +
+        '<div class="field"><label for="ce-v">Email status</label><select id="ce-v"><option value="">Not verified yet</option><option value="valid"' + (G.isVerified(c.verification) ? ' selected' : '') + '>Verified valid</option><option value="catch-all">Catch-all / risky</option><option value="invalid">Invalid</option></select></div></div>' +
+        (c.linkedinSearch ? '<div class="small"><a href="' + esc(c.linkedinSearch) + '" target="_blank" rel="noopener">Look them up on LinkedIn</a> to confirm they still hold this role.</div>' : ''),
+      actions: [{ label: 'Cancel', cls: 'ghost' }, {
+        label: 'Save', cls: 'primary', onClick: function (m) {
+          var e = m.body.querySelector('#ce-e').value.trim(), v = m.body.querySelector('#ce-v').value;
+          if (e && !G.normEmail(e)) { App.toast('That email address doesn\'t look right', 'bad'); return false; }
+          if (e && t.contacts.some(function (x) { return x !== c && x.email === G.normEmail(e); })) { App.toast('Another contact already has that email', 'bad'); return false; }
+          c.email = G.normEmail(e); c.verification = v; c.history = c.history || []; c.history.push({ at: G.now(), source: 'Manual', changed: ['email'] });
+          G.log(t, 'Operator', 'Updated contact email', c.name); App.save(); App.render(); App.toast('Saved');
+        }
+      }]
+    });
+  };
   A['con-exclude'] = function (el) { var c = S.t.contacts[+el.getAttribute('data-i')]; c.excluded = !c.excluded; G.log(S.t, 'Operator', (c.excluded ? 'Excluded' : 'Included') + ' contact', c.name); App.save(); App.render(); };
   A['con-import'] = function () {
     var t = S.t;

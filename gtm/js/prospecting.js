@@ -105,6 +105,89 @@
 
   /* ================= Find buyers ================= */
   function liSearch(title, company) { return 'https://www.linkedin.com/search/results/people/?keywords=' + encodeURIComponent(title + ' ' + company); }
+  /* ================= Suggest contacts ================= */
+  var SUGGESTED_C = 'GTM Engine suggestion (unverified)';
+  function needBuyers(t, icp) {
+    var sc = G.scoreAll(t, icp), order = { eligible: 0, research: 1 };
+    return t.accounts.filter(function (a) { var s = sc[a.id].status; return (s === 'eligible' || s === 'research') && !t.contacts.some(function (c) { return c.accountId === a.id && G.contactState(t, c, icp) === 'ready'; }); })
+      .sort(function (a, b) { return order[sc[a.id].status] - order[sc[b.id].status] || sc[b.id].known - sc[a.id].known; });
+  }
+  function contactsPrompt(t, icp, accs, per) {
+    return 'You are a B2B research assistant helping find the right buyers at target companies for ' + (t.profile.name || 'the client') + ', which sells: ' + (t.profile.offer || 'see personas') + '.\n\n' +
+      'Buyer personas (in priority order):\n' + icp.personas.slice().sort(function (a, b) { return (a.priority === 'primary' ? 0 : 1) - (b.priority === 'primary' ? 0 : 1); }).map(function (p) { return '- ' + p.name + ' (' + p.priority + '): titles like ' + p.titles.join(', '); }).join('\n') +
+      '\n\nCompanies:\n' + accs.map(function (a) { return '- ' + a.name + ' (' + a.domain + (a.country ? ', ' + a.country : '') + ')'; }).join('\n') +
+      '\n\nFor each company, name up to ' + per + ' people who you are confident currently or very recently held a matching role there, based on public business information (company leadership pages, press releases, news). Prefer the primary persona. If you are not confident about a specific person at a company, do not guess a name: skip that company. Never include email addresses or phone numbers.' +
+      '\n\nReply with ONLY a JSON object:\n{"contacts":[{"domain":"company domain from the list","name":"Full Name","title":"their job title","basis":"where this is publicly stated, e.g. company leadership page or a 2025 press release","confidence":"high or medium"}]}';
+  }
+  function cleanContacts(d, accs) {
+    var t = S.t, seen = {}, byDom = {};
+    accs.forEach(function (a) { byDom[a.domain] = a; });
+    var list = (d && Array.isArray(d.contacts) ? d.contacts : []).map(function (c) {
+      var dom = G.normDomain(c && c.domain), a = byDom[dom] || (dom && G.accountByDomain(t, dom));
+      var name = String(c && c.name || '').replace(/\s+/g, ' ').trim().slice(0, 80);
+      return { account: a || null, name: name, title: String(c && c.title || '').trim().slice(0, 120), basis: String(c && c.basis || '').trim().slice(0, 200), confidence: /high/i.test(c && c.confidence) ? 'high' : 'medium' };
+    }).filter(function (c) {
+      if (!c.account || !c.name || !/\s/.test(c.name)) return false;
+      var k = c.account.id + '|' + c.name.toLowerCase(); if (seen[k]) return false; seen[k] = 1;
+      c.existing = t.contacts.some(function (x) { return x.accountId === c.account.id && x.name.toLowerCase() === c.name.toLowerCase(); });
+      return true;
+    });
+    return list.length ? { contacts: list } : null;
+  }
+  function previewContacts(c) {
+    var t = S.t, icp = G.icpForScoring(t);
+    var rows = c.contacts.map(function (x, i) {
+      var ids = G.matchPersonas(x.title, icp.personas), per = ids.length === 1 ? icp.personas.find(function (p) { return p.id === ids[0]; }) : null;
+      return '<tr><td><input type="checkbox" data-pick="c' + i + '"' + (x.existing ? ' disabled' : ' checked') + ' aria-label="Add ' + esc(x.name) + '"></td>' +
+        '<td class="name"><b>' + esc(x.name) + '</b><span>' + esc(x.title) + '</span></td><td>' + esc(x.account.name) + '</td>' +
+        '<td>' + (x.existing ? App.badge('muted', 'Already added') : per ? App.badge('ok', per.name) : ids.length ? App.badge('warn', 'Ambiguous') : App.badge('muted', 'No persona match')) + (x.confidence === 'medium' ? '<br><span class="small faint">medium confidence</span>' : '') + '</td>' +
+        '<td class="small" style="max-width:220px">' + esc(x.basis || '—') + '</td>' +
+        '<td><a class="chip" target="_blank" rel="noopener" href="' + esc(liSearch(x.name, x.account.name)) + '">' + I('search') + 'Verify on LinkedIn</a></td></tr>';
+    }).join('');
+    return '<div class="note warn">' + I('alert') + '<span class="grow"><b>Names to verify, not confirmed contacts.</b> GTM Engine suggests people from public business information it already knows, without live search, so someone may have changed roles. No emails are suggested: these are added as "Missing email" until you find and verify one.</span></div>' +
+      '<div class="row"><span class="grow small muted">' + App.plural(c.contacts.filter(function (x) { return !x.existing; }).length, 'person', 'people') + ' suggested</span><button type="button" class="btn sm ghost" data-act="pick-all">Select all</button><button type="button" class="btn sm ghost" data-act="pick-none">Select none</button></div>' +
+      '<div class="table-wrap" style="border:1px solid var(--line);border-radius:10px;max-height:52vh"><table class="t"><thead><tr><th></th><th>Person</th><th>Company</th><th>Persona</th><th>Publicly stated in</th><th></th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+  function applyContacts(c, picks) {
+    var t = S.t, chosen = c.contacts.filter(function (x, i) { return picks['c' + i] && !x.existing; });
+    if (!chosen.length) { App.toast('Tick at least one person to add', 'bad'); return; }
+    var rows = chosen.map(function (x) { return { fullName: x.name, title: x.title, email: '', companyDomain: x.account.domain, verification: '', provider: SUGGESTED_C }; });
+    var map = { fullName: 'fullName', title: 'title', email: 'email', companyDomain: 'companyDomain', verification: 'verification', provider: 'provider' };
+    var r = G.importContacts(t, rows, map, { provider: SUGGESTED_C });
+    chosen.forEach(function (x) {
+      var ct = t.contacts.find(function (y) { return y.accountId === x.account.id && y.name.toLowerCase() === x.name.toLowerCase(); });
+      if (ct) { ct.suggested = true; ct.note = 'Suggested by GTM Engine' + (x.basis ? ' (' + x.basis + ')' : '') + '. Verify the role and find a work email.'; ct.linkedinSearch = liSearch(x.name, x.account.name); }
+    });
+    G.log(t, 'GTM Engine (suggestion)', 'Suggested contacts added', r.added + ' added, names only');
+    App.save(); S.ui.cf = 'all';
+    if (S.route === 'contacts') App.render(); else App.go('#/contacts');
+    App.toast(App.plural(r.added, 'person', 'people') + ' added as "Missing email". Verify each and add their work email.');
+  }
+  A['ai-contacts'] = function () {
+    var t = S.t, icp = G.icpForScoring(t);
+    if (!icp || !icp.personas.length) { App.toast('Add buyer personas to the ICP first', 'bad'); App.go('#/icp'); return; }
+    var accs = needBuyers(t, icp);
+    if (!accs.length) { App.toast(t.accounts.length ? 'Every fitting account already has a ready buyer' : 'Add or suggest accounts first', 'bad'); if (!t.accounts.length) App.go('#/accounts'); return; }
+    App.modal({
+      title: 'Suggest contacts with GTM Engine', sub: 'Suggests named buyers at accounts that fit (or nearly fit) and don\'t have a ready contact yet. ' + App.plural(accs.length, 'account') + ' qualify.',
+      body: '<div class="field"><label>How many accounts?</label><div class="seg" id="sc-a">' + [5, 10, 25].filter(function (n) { return n < accs.length; }).concat([accs.length]).map(function (n, i, arr) { var def = Math.min(10, accs.length), on = n === def || (i === arr.length - 1 && arr.indexOf(def) < 0); return '<button type="button" data-n="' + n + '" class="' + (on ? 'on' : '') + '">' + (i === arr.length - 1 ? 'All ' + n : n) + '</button>'; }).join('') + '</div><span class="hint">Best-fitting accounts first.</span></div>' +
+        '<div class="field"><label>People per account</label><div class="seg" id="sc-p">' + [1, 2, 3].map(function (n) { return '<button type="button" data-n="' + n + '" class="' + (n === 2 ? 'on' : '') + '">' + n + '</button>'; }).join('') + '</div></div>' +
+        '<div class="small muted">Names and titles only. GTM Engine never guesses email addresses.</div>',
+      onOpen: function (mm) {
+        ['#sc-a', '#sc-p'].forEach(function (id) { mm.body.querySelectorAll(id + ' button').forEach(function (b) { b.addEventListener('click', function () { mm.body.querySelectorAll(id + ' button').forEach(function (x) { x.classList.toggle('on', x === b); }); }); }); });
+      },
+      actions: [{ label: 'Cancel', cls: 'ghost' }, {
+        label: 'Suggest contacts', cls: 'primary', icon: 'sparkle', onClick: function (mm) {
+          var na = +(mm.body.querySelector('#sc-a .on') || {}).getAttribute('data-n') || 10, per = +(mm.body.querySelector('#sc-p .on') || {}).getAttribute('data-n') || 2;
+          var pick = accs.slice(0, na);
+          setTimeout(function () {
+            App.askClaude({ title: 'Suggested contacts', sub: 'Up to ' + per + ' per account at ' + App.plural(pick.length, 'account'), basis: 'ICP personas and ' + App.plural(pick.length, 'account'), prompt: contactsPrompt(t, icp, pick, per), clean: function (d) { return cleanContacts(d, pick); }, preview: previewContacts, apply: applyContacts, applyLabel: 'Add selected' });
+          });
+        }
+      }]
+    });
+  };
+
   A['find-buyers'] = function () {
     var t = S.t, icp = G.icpForScoring(t);
     if (!icp || !icp.personas.length) { App.toast('Add buyer personas to the ICP first', 'bad'); App.go('#/icp'); return; }
@@ -121,7 +204,7 @@
           '<div class="row tight small">' + prim.map(function (p) { return '<span class="muted">' + esc(p.name) + ':</span> ' + p.titles.slice(0, 4).map(function (ti) { return '<a href="' + esc(liSearch(ti, a.name)) + '" target="_blank" rel="noopener" class="chip">' + I('search') + esc(ti) + '</a>'; }).join(' '); }).join('<span class="muted">·</span>') + '</div></div>';
       }).join('') + '</div>' + (accs.length > 60 ? '<div class="small muted">Showing the first 60 by fit.</div>' : '')
         : '<div class="empty"><div class="art">' + I('check') + '</div><h2>Every fitting account has a buyer</h2><p>Import or suggest more accounts to keep going.</p></div>',
-      actions: [{ label: 'Done' }]
+      actions: accs.length ? [{ label: 'Suggest names with GTM Engine', cls: 'ghost', icon: 'sparkle', onClick: function () { setTimeout(function () { A['ai-contacts'](); }); } }, { label: 'Done' }] : [{ label: 'Done' }]
     });
   };
   A['contact-add'] = function (el) {

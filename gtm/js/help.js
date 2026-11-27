@@ -70,6 +70,8 @@
     'ca-t': 'Their job title as shown on LinkedIn or the company site. It\'s matched to your buyer personas automatically.',
     'ca-e': 'Their work email if you have it. Don\'t guess email formats: guessed addresses bounce and hurt your sending reputation. Leave blank and find it later.',
     'ca-v': 'Whether the email has been checked by a verification tool. Only verified emails can be included in a batch.',
+    'ce-e': 'Their work email, from LinkedIn, the company site, a signature or an enrichment tool. Don\'t guess the format: guessed addresses bounce and hurt your sending reputation.',
+    'ce-v': 'Whether a verification tool has checked this address. Only verified emails can go into a batch.',
     'ca-l': 'Optional link to their LinkedIn profile, so anyone can double-check who this is.',
 
     /* Imports */
