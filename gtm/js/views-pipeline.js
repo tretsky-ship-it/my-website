@@ -60,15 +60,7 @@
     return '<div class="note warn" style="margin-bottom:16px">' + I('alert') + '<span class="grow">' + (d ? 'Scores below preview <b>draft ICP v' + d.v + '</b>. Nothing can be staged until a version is approved.' : 'No ICP yet, so accounts can be imported but not scored.') + '</span><a class="btn sm" href="#/icp">' + (d ? 'Review draft' : 'Create ICP') + '</a></div>';
   }
   // Turn scoring jargon into what the person needs to do.
-  function plainWhy(r) {
-    r = String(r || '');
-    if (/trigger/i.test(r)) return /date and source/i.test(r) ? 'Missing: the date or link for its buying signal' : 'Missing: a recent buying signal';
-    if (/Employee count/i.test(r)) return 'Missing: number of employees';
-    if (/Industry missing/i.test(r)) return 'Missing: industry';
-    if (/Country unknown/i.test(r)) return 'Missing: country';
-    if (/buyer|Contacts need review/i.test(r)) return 'Missing: a contact to email';
-    return 'Missing: ' + r.replace(/^[^:]*:\s*/, '');
-  }
+  function plainWhy(r) { return 'Missing: ' + G.plainMissing(r); }
   App.plainWhy = plainWhy;
   App.refreshers['acc-table'] = function () {
     var el = document.getElementById('acc-table'); if (!el) return;

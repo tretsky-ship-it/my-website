@@ -526,7 +526,7 @@
       var v = a.custom[c.id];
       if (!c.mandatory) return;
       if (v === 'nomatch') out.reasons.push('Fails: ' + c.label);
-      else if (v !== 'match') out.research.push(c.label);
+      else if (v !== 'match') out.research.push('Unchecked requirement: ' + c.label);
     });
 
     function comp(key, state, reason) {
@@ -581,6 +581,18 @@
       out.components.forEach(function (c) { if (c.state === 'unknown') out.research.push(c.label + ': ' + c.reason); });
     }
     return out;
+  };
+  // What a "needs research" account is actually missing, in plain words.
+  G.plainMissing = function (r) {
+    r = String(r || '');
+    if (/^Unchecked requirement: /.test(r)) return 'an unchecked requirement (' + r.replace(/^Unchecked requirement: /, '') + ')';
+    if (/trigger/i.test(r)) return /date and source/i.test(r) ? 'the date or link for its buying signal' : 'a recent buying signal';
+    if (/Employee count/i.test(r)) return 'number of employees';
+    if (/Industry missing/i.test(r)) return 'industry';
+    if (/Country unknown/i.test(r)) return 'country';
+    if (/No target industries/i.test(r)) return 'target industries in the ICP';
+    if (/buyer|Contacts need review/i.test(r)) return 'a contact to email';
+    return r.replace(/^[^:]*:\s*/, '');
   };
   G.ACCOUNT_STATES = {
     eligible: { label: 'Eligible', tone: 'ok' },
@@ -692,7 +704,10 @@
       var a = G.accountById(t, c.accountId);
       if (!a) return skip('No account');
       var sc = scores[a.id];
-      if (sc.status !== 'eligible') return skip('Account ' + G.ACCOUNT_STATES[sc.status].label.toLowerCase());
+      if (sc.status === 'research') return skip('Company missing: ' + G.plainMissing(sc.research[0]));
+      if (sc.status === 'deprioritized') return skip('Company is a weak fit for the ICP (industry or size)');
+      if (sc.status === 'excluded') return skip('Company excluded: ' + sc.reasons[0].replace(/\s*\(.*\)$/, ''));
+      if (sc.status !== 'eligible') return skip('Company not scored yet (ICP incomplete)');
       if (st !== 'ready') return skip(G.CONTACT_STATES[st].label);
       if (cmp.personaId && G.contactPersona(c, icp).id !== cmp.personaId) return skip('Different persona');
       if (t.enrollments.some(function (e) { return e.key === G.intentKey(cmp.id, cmp.channel, c.id); }) || inOpenBatch[c.id]) return skip('Already in this campaign');

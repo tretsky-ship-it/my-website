@@ -264,7 +264,7 @@
   // Fills a workspace with obviously fake contacts and placeholder buying signals so the rest of the flow
   // (batches, approval, export, outcomes) can be tried. Test emails use the reserved example.invalid domain,
   // so nothing can ever reach a real inbox. Everything is flagged and removable in one click.
-  App.hasTestData = function (t) { return t.contacts.some(function (c) { return c.test; }) || t.accounts.some(function (a) { return a.testTrigger; }); };
+  App.hasTestData = function (t) { return t.contacts.some(function (c) { return c.test; }) || t.accounts.some(function (a) { return a.testTrigger || a.testFill; }); };
   function personaTitle(icp) {
     var ps = icp.personas.slice().sort(function (a, b) { return (a.priority === 'primary' ? 0 : 1) - (b.priority === 'primary' ? 0 : 1); });
     for (var i = 0; i < ps.length; i++) for (var j = 0; j < ps[i].titles.length; j++) if (G.matchPersonas(ps[i].titles[j], icp.personas).length === 1) return ps[i].titles[j];
@@ -282,27 +282,33 @@
       title: 'Fill with test data', sub: 'For trying out the flow. Nothing here is real, and nothing can be sent to a real person.',
       body: '<div class="note info">' + I('shield') + '<span class="grow">Test contacts are named "Test Buyer 1, 2, 3…" with addresses at <b>example.invalid</b>, a domain reserved so email can never be delivered. Everything is marked as test data, and you can remove it all in one click from the banner or Settings.</span></div>' +
         '<label class="check"><input type="checkbox" id="td-c" checked> Add a test contact at each company without a ready buyer (' + Math.min(noBuyer, 50) + ')</label>' +
-        '<label class="check"><input type="checkbox" id="td-t"' + (noTrigger ? ' checked' : '') + '> Add a placeholder buying signal to companies missing one (' + noTrigger + '), so they can become Eligible</label>' +
+        '<label class="check"><input type="checkbox" id="td-t" checked> Fill in whatever is keeping companies at "Needs research" with test values: buying signal (' + noTrigger + ' missing), employee count, country, industry and unchecked requirements</label>' +
         '<div class="small muted">Companies that are excluded (customers, open deals, wrong country or industry) are left alone.</div>',
       actions: [{ label: 'Cancel', cls: 'ghost' }, {
         label: 'Fill with test data', cls: 'primary', icon: 'flag', onClick: function (m) {
           var doC = m.body.querySelector('#td-c').checked, doT = m.body.querySelector('#td-t').checked, title = personaTitle(icp);
           var kw = icp.triggers.keywords[0] || 'growth', nT = 0, nC = 0, n = t.contacts.filter(function (c) { return c.test; }).length;
+          var nF = 0;
           if (doT) usable.forEach(function (a) {
-            if (a.trigger.text && a.trigger.date && a.trigger.url) return;
-            a.trigger = { text: 'shows a test signal (' + kw + ')', date: G.now(), url: 'https://example.invalid/gtm-engine-test-signal' }; a.testTrigger = true; nT++;
+            var fill = a.testFill || {}, did = false;
+            if (!(a.trigger.text && a.trigger.date && a.trigger.url)) { a.trigger = { text: 'shows a test signal (' + kw + ')', date: G.now(), url: 'https://example.invalid/gtm-engine-test-signal' }; a.testTrigger = true; nT++; }
+            if ((a.employees === null || a.employees === undefined) && (icp.size.min !== null || icp.size.max !== null)) { fill.employees = true; a.employees = Math.round(((icp.size.min || 0) + (icp.size.max || (icp.size.min || 0) * 2 || 200)) / 2); did = true; }
+            if (!a.country && icp.geography.values.length) { fill.country = true; a.country = icp.geography.values[0]; did = true; }
+            if (!a.industry && icp.industries.values.length) { fill.industry = true; a.industry = icp.industries.values[0]; did = true; }
+            icp.custom.forEach(function (cu) { if (cu.mandatory && a.custom[cu.id] !== 'match' && a.custom[cu.id] !== 'nomatch') { fill.custom = (fill.custom || []).concat(cu.id); a.custom[cu.id] = 'match'; did = true; } });
+            if (did) { a.testFill = fill; nF++; }
           });
           if (doC) usable.filter(function (a) { return !t.contacts.some(function (c) { return c.accountId === a.id && G.contactState(t, c, icp) === 'ready'; }); }).slice(0, 50).forEach(function (a) {
             n++; nC++;
             t.contacts.push({ id: G.uid('ct'), accountId: a.id, createdAt: G.now(), personaId: null, history: [], name: 'Test Buyer ' + n, firstName: 'Test', lastName: 'Buyer ' + n, title: title,
               email: 'test.buyer' + n + '.' + a.domain.replace(/[^a-z0-9]+/g, '-') + '@example.invalid', verification: 'valid', provider: 'Test data', retrievedAt: G.now(), linkedin: '', crmId: '', employmentConfirmed: true, test: true });
           });
-          G.log(t, 'Operator', 'Added test data', nC + ' test contacts, ' + nT + ' placeholder signals');
+          G.log(t, 'Operator', 'Added test data', nC + ' test contacts, ' + nT + ' placeholder signals, ' + nF + ' companies with test details');
           App.save();
           var am = G.accountMetrics(t), still = am.counts.research;
           App.render();
-          App.modal({ title: 'Test data added', body: App.resultTiles([['Test contacts', nC], ['Placeholder signals', nT], ['Companies ready', am.counts.eligible], ['People ready', t.contacts.filter(function (c) { return G.contactState(t, c, icp) === 'ready'; }).length]]) +
-            (still ? '<div class="note warn">' + I('info') + '<span class="grow">' + App.plural(still, 'company still needs', 'companies still need') + ' research for another reason, such as an unknown employee count or a country outside the ICP. Click one on the Accounts page to see what.</span></div>' : '') +
+          App.modal({ title: 'Test data added', body: App.resultTiles([['Test contacts', nC], ['Placeholder signals', nT], ['Details filled', nF], ['Companies ready', am.counts.eligible], ['People ready', t.contacts.filter(function (c) { return G.contactState(t, c, icp) === 'ready'; }).length]]) +
+            (still ? '<div class="note warn">' + I('info') + '<span class="grow">' + App.plural(still, 'company still needs', 'companies still need') + ' research. The Accounts page says what each is missing.</span></div>' : '') + (am.counts.deprioritized ? '<div class="small muted">' + App.plural(am.counts.deprioritized, 'company is', 'companies are') + ' deprioritised: their real details (industry or size) don\'t fit the ICP, so test data leaves them alone.</div>' : '') +
             '<div class="small">Next: open <b>Campaigns</b>, create or open a campaign, and click <b>Draft next batch</b>.</div>',
             actions: [{ label: 'Close', cls: 'ghost' }, { label: 'Go to Campaigns', cls: 'primary', onClick: function () { App.go('#/campaigns'); } }] });
         }
@@ -311,12 +317,18 @@
   };
   A['test-remove'] = function () {
     var t = S.t, ids = t.contacts.filter(function (c) { return c.test; }).map(function (c) { return c.id; });
-    var trig = t.accounts.filter(function (a) { return a.testTrigger; });
+    var trig = t.accounts.filter(function (a) { return a.testTrigger; }), filled = t.accounts.filter(function (a) { return a.testFill; });
     App.confirm({ title: 'Remove all test data?', body: '<p>Removes ' + App.plural(ids.length, 'test contact') + ', ' + App.plural(trig.length, 'placeholder buying signal') + ', and anything recorded for test contacts (batch rows, enrollments, events, replies). Real data is untouched.</p>', ok: 'Remove test data', danger: true }).then(function (ok) {
       if (!ok) return;
       var gone = {}; ids.forEach(function (id) { gone[id] = 1; });
       t.contacts = t.contacts.filter(function (c) { return !gone[c.id]; });
       trig.forEach(function (a) { a.trigger = { text: '', date: '', url: '' }; delete a.testTrigger; });
+      filled.forEach(function (a) {
+        var f = a.testFill;
+        if (f.employees) a.employees = null; if (f.country) a.country = ''; if (f.industry) a.industry = '';
+        (f.custom || []).forEach(function (id) { delete a.custom[id]; });
+        delete a.testFill;
+      });
       t.batches.forEach(function (b) {
         var before = b.rows.length;
         b.rows = b.rows.filter(function (r) { return !gone[r.contactId]; });
