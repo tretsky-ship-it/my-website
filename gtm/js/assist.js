@@ -60,7 +60,7 @@
       getCap().then(function (s) { if (s) live(s); else manual(); });
     }
     function live(s) {
-      m.setBody('<div class="note info">' + I('sparkle') + '<div class="grow"><b>Asking Claude…</b> Usually 15–40 seconds. Based on: ' + esc(o.basis) + '</div></div><pre id="ai-stream" class="small muted" style="white-space:pre-wrap;max-height:240px;overflow:auto;margin:0;font:12px/1.5 var(--mono)"></pre>');
+      m.setBody('<div class="note info">' + I('sparkle') + '<div class="grow"><b>GTM Engine is working on it…</b> Usually 15–40 seconds. Based on: ' + esc(o.basis) + '</div></div><pre id="ai-stream" class="small muted" style="white-space:pre-wrap;max-height:240px;overflow:auto;margin:0;font:12px/1.5 var(--mono)"></pre>');
       m.setActions([{ label: 'Cancel', cls: 'ghost', onClick: function () { if (ctl) ctl.abort(); } }]);
       ctl = new AbortController();
       var out = m.body.querySelector('#ai-stream');
@@ -68,20 +68,20 @@
         .then(function (data) { show(data); }, function (e) {
           var code = e && e.code;
           if (code === 'aborted' || (ctl && ctl.signal.aborted)) return;
-          if (code === 'not_granted') { manual('Claude access was declined for this page, so use the copy-and-paste route instead.'); return; }
-          if (code === 'rate_limited') { m.setBody('<div class="note warn">' + I('alert') + '<span class="grow">Claude is busy or your usage limit is reached. Wait a minute, then try again.</span></div>'); m.setActions([{ label: 'Close', cls: 'ghost' }, { label: 'Try again', cls: 'primary', onClick: function () { start(); return false; } }]); return; }
+          if (code === 'not_granted') { manual('AI access was declined for this page, so use the copy-and-paste route instead.'); return; }
+          if (code === 'rate_limited') { m.setBody('<div class="note warn">' + I('alert') + '<span class="grow">GTM Engine\'s AI is busy or your usage limit is reached. Wait a minute, then try again.</span></div>'); m.setActions([{ label: 'Close', cls: 'ghost' }, { label: 'Try again', cls: 'primary', onClick: function () { start(); return false; } }]); return; }
           if (code === 'invalid_json' && e.text) { try { show(parseLoose(e.text)); return; } catch (x) { } }
-          m.setBody('<div class="note bad">' + I('alert') + '<span class="grow">Claude did not return a usable answer' + (e && e.message ? ' (' + esc(e.message) + ')' : '') + '.</span></div>');
+          m.setBody('<div class="note bad">' + I('alert') + '<span class="grow">GTM Engine did not get a usable answer' + (e && e.message ? ' (' + esc(e.message) + ')' : '') + '.</span></div>');
           m.setActions([{ label: 'Use copy and paste', cls: 'ghost', onClick: function () { manual(); return false; } }, { label: 'Try again', cls: 'primary', onClick: function () { start(); return false; } }]);
         });
     }
     function manual(why) {
-      m.setBody((why ? '<div class="note warn">' + I('alert') + '<span class="grow">' + esc(why) + '</span></div>' : '<div class="note info">' + I('info') + '<span class="grow">Claude can\'t be asked directly from here. Copy this prompt into Claude, then paste its answer below. (In the claude.ai version of this app, it runs with one click.)</span></div>') +
+      m.setBody((why ? '<div class="note warn">' + I('alert') + '<span class="grow">' + esc(why) + '</span></div>' : '<div class="note info">' + I('info') + '<span class="grow">GTM Engine can\'t run this automatically here. Copy this prompt into your AI assistant, then paste its answer below. (In the hosted version of GTM Engine, it runs with one click.)</span></div>') +
         '<div class="field"><label>1. Prompt</label><textarea readonly rows="7" style="font:12px/1.5 var(--mono)">' + esc(o.prompt) + '</textarea></div>' +
-        '<div class="field"><label for="ai-paste">2. Paste Claude\'s answer</label><textarea id="ai-paste" rows="6" placeholder="{ ... }" style="font:12px/1.5 var(--mono)"></textarea></div>');
+        '<div class="field"><label for="ai-paste">2. Paste the answer</label><textarea id="ai-paste" rows="6" placeholder="{ ... }" style="font:12px/1.5 var(--mono)"></textarea></div>');
       m.setActions([{ label: 'Copy prompt', cls: 'ghost', icon: 'copy', onClick: function () { App.copy(o.prompt, 'Prompt copied'); return false; } }, {
         label: 'Use this answer', cls: 'primary', onClick: function () {
-          try { show(parseLoose(m.body.querySelector('#ai-paste').value)); } catch (e) { App.toast('That answer has no readable JSON. Paste Claude\'s whole reply.', 'bad'); }
+          try { show(parseLoose(m.body.querySelector('#ai-paste').value)); } catch (e) { App.toast('That answer has no readable JSON. Paste the whole reply.', 'bad'); }
           return false;
         }
       }]);
@@ -182,8 +182,8 @@
     }
     ['industry', 'size', 'trigger', 'buyer'].forEach(function (k) { if (d.weights[k] === null) d.weights[k] = G.SUGGESTED_WEIGHTS[k]; });
     if (d.cutoff === null) d.cutoff = 70;
-    if (!d.note) d.note = 'First draft suggested by Claude from the client intake; criteria are assumptions until sourced.';
-    G.log(t, 'Claude (suggestion)', 'Suggested ICP v' + d.v + ' criteria', Object.keys(pk).filter(function (k) { return pk[k]; }).length + ' sections ' + (rep ? 'replaced' : 'added'));
+    if (!d.note) d.note = 'First draft suggested by GTM Engine from the client intake; criteria are assumptions until sourced.';
+    G.log(t, 'GTM Engine (suggestion)', 'Suggested ICP v' + d.v + ' criteria', Object.keys(pk).filter(function (k) { return pk[k]; }).length + ' sections ' + (rep ? 'replaced' : 'added'));
     S.ui.icpV = d.v;
     App.save();
     if (S.route === 'icp') App.render(); else App.go('#/icp');
@@ -193,7 +193,7 @@
     var t = S.t;
     if (!App.canSuggest(t)) { App.toast('Add the client website, offer or a source first, so there is something to go on', 'bad'); App.go('#/setup'); return; }
     var basis = [t.profile.website && 'website', t.profile.offer && 'offer', t.profile.notes && 'discovery notes', t.sources.length && App.plural(t.sources.length, 'source'), t.proof.length && 'proof'].filter(Boolean).join(', ');
-    ask({ title: 'Suggest an ICP with Claude', sub: 'A first draft of firmographics, triggers, disqualifiers and buyer personas from your intake.', basis: basis, prompt: icpPrompt(t), clean: cleanICP, preview: previewICP, apply: applyICP, applyLabel: 'Add to ICP draft' });
+    ask({ title: 'Suggest an ICP with GTM Engine', sub: 'A first draft of firmographics, triggers, disqualifiers and buyer personas from your intake.', basis: basis, prompt: icpPrompt(t), clean: cleanICP, preview: previewICP, apply: applyICP, applyLabel: 'Add to ICP draft' });
   };
   A['ai-icp'] = function () { App.suggestICP(); };
 
@@ -231,7 +231,7 @@
       apply: function (b, pk) {
         BRIEF_FIELDS.forEach(function (f) { if (pk[f[0]] && b[f[0]]) c[f[0]] = b[f[0]]; });
         if (pk.steps && b.steps.length) c.steps = b.steps;
-        G.log(t, 'Claude (suggestion)', 'Suggested campaign brief', c.name);
+        G.log(t, 'GTM Engine (suggestion)', 'Suggested campaign brief', c.name);
         App.save(); App.render(); App.toast('Brief updated. Check the live preview, then draft a batch.');
       }
     });

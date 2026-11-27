@@ -8,11 +8,11 @@
   var BY_ID = {
     /* Client setup */
     'f-name': 'The client\'s business name as you\'d say it to them, e.g. "Acme Robotics". It appears on exports and the weekly brief.',
-    'f-website': 'The client\'s main website, e.g. acmerobotics.com. Claude uses it when suggesting the ICP. Just the domain is fine.',
+    'f-website': 'The client\'s main website, e.g. acmerobotics.com. GTM Engine uses it when suggesting the ICP. Just the domain is fine.',
     'f-offer': 'The one product or service this pilot sells, in a sentence: what it is, who it\'s for and the result. Example: "Predictive maintenance sensors that cut unplanned downtime for packaging plants." Keep it to one offer per pilot.',
-    'f-geography': 'Where the client wants to sell, e.g. "United States and Canada" or "Texas and Oklahoma". This is for your reference and Claude\'s suggestions; the hard filter is set on the ICP.',
+    'f-geography': 'Where the client wants to sell, e.g. "United States and Canada" or "Texas and Oklahoma". This is for your reference and GTM Engine\'s suggestions; the hard filter is set on the ICP.',
     'f-crm': 'Where the client tracks deals. Meetings and deals are matched back to this system. Pick "None yet" if they don\'t have one.',
-    'f-notes': 'Anything from the discovery call that shapes targeting: who buys today, recent wins and losses, competitors, words to avoid, anything off limits. Claude reads this when suggesting the ICP.',
+    'f-notes': 'Anything from the discovery call that shapes targeting: who buys today, recent wins and losses, competitors, words to avoid, anything off limits. GTM Engine reads this when suggesting the ICP.',
     'f-outreachOwner': 'The person who runs the campaigns day to day, often you or a VA. Replies with no CRM owner go to them, and their name signs emails by default.',
     'f-approver': 'The person at the client who is allowed to approve who gets contacted and what the emails say, usually the founder or head of sales or marketing. Their name is recorded on every approval.',
     'f-budget': 'The total the client agreed to spend on data and AI for this pilot, in US dollars (e.g. enrichment credits). Enrichment spend is blocked once it would go over this. Leave blank if not agreed yet.',
@@ -24,7 +24,7 @@
     'sup-why': 'A short reason, e.g. "Partner" or "Asked not to be contacted". Shown wherever the block applies.',
 
     /* Sources and proof */
-    'sa-x': 'Paste a call transcript or your notes straight from Fireflies, Fathom, Zoom, Gong or anywhere else. Keep speaker names and timestamps if you have them. Claude reads this when suggesting the ICP and personas, and you can open it again from the Sources list.',
+    'sa-x': 'Paste a call transcript or your notes straight from Fireflies, Fathom, Zoom, Gong or anywhere else. Keep speaker names and timestamps if you have them. GTM Engine reads this when suggesting the ICP and personas, and you can open it again from the Sources list.',
     'sa-t': 'A name you\'ll recognise later, e.g. "Discovery call with Pat, Oct 3" or "Won/lost deals 2025".',
     'sa-ty': 'What kind of material this is. Call notes and transcripts are where buyer language and objections usually come from.',
     'sa-d': 'When the material was created or the call happened, not today\'s date. Old sources are easier to spot this way.',
@@ -32,7 +32,7 @@
     'sa-p': '"Public use" means the client allows what\'s in it to be quoted or claimed in outreach. Anything internal (call recordings, private numbers) stays "Internal only" and is never put in emails.',
     'sa-u': 'Optional link to where the original lives, like a Google Drive file or web page.',
     'sa-or': 'Optional. If you have both notes and a transcript of the same call, give them the same ID (e.g. "call-2026-10-03") so they count as one piece of evidence, not two.',
-    'sa-f': 'Optional. Text files (.txt, .md, .vtt, .srt, .csv) are stored so you can open them here and Claude can read them. Other files are recorded by name only.',
+    'sa-f': 'Optional. Text files (.txt, .md, .vtt, .srt, .csv) are stored so you can open them here and GTM Engine can read them. Other files are recorded by name only.',
     'pa-t': 'A result, quote or fact the client is allowed to say, written exactly as it may appear in an email. Example: "Customers cut invoice processing time by half in their first quarter."',
     'pa-s': 'The source that proves it, such as a case study or won-deal list.',
     'pa-p': 'Only "Public use" proof can appear in outreach. Use "Internal only" for anything the client hasn\'t cleared.',

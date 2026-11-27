@@ -23,7 +23,7 @@
       var t = S.t, icp = G.icpForScoring(t), act = G.activeICP(t);
       var conflicts = t.conflicts.filter(function (c) { return !c.resolved; });
       if (!t.accounts.length && !conflicts.length) {
-        return (!act ? icpNote(t) : '') + App.emptyState('accounts', 'Import a small first batch', 'No list yet? Let Claude suggest companies that fit your ICP, choosing how many. Or start with 25–50 companies from Databar or any CSV. Domains are normalised, re-imports never duplicate, existing customers and open deals are suppressed, and subsidiaries go to manual review.', (G.icpForScoring(t) ? '<button class="btn primary" data-act="ai-accounts">' + I('sparkle') + 'Suggest accounts with Claude</button><button class="btn" data-act="acc-import">' + I('upload') + 'Import a list</button>' : '<button class="btn primary" data-act="acc-import">' + I('upload') + 'Import accounts</button>') + '<button class="btn" data-act="acc-template">' + I('download') + 'CSV template</button>');
+        return (!act ? icpNote(t) : '') + App.emptyState('accounts', 'Import a small first batch', 'No list yet? Let GTM Engine suggest companies that fit your ICP, choosing how many. Or start with 25–50 companies from Databar or any CSV. Domains are normalised, re-imports never duplicate, existing customers and open deals are suppressed, and subsidiaries go to manual review.', (G.icpForScoring(t) ? '<button class="btn primary" data-act="ai-accounts">' + I('sparkle') + 'Suggest accounts with GTM Engine</button><button class="btn" data-act="acc-import">' + I('upload') + 'Import a list</button>' : '<button class="btn primary" data-act="acc-import">' + I('upload') + 'Import accounts</button>') + '<button class="btn" data-act="acc-template">' + I('download') + 'CSV template</button>');
       }
       var am = G.accountMetrics(t), tab = param === 'conflicts' ? 'conflicts' : 'list';
       var f = S.ui.af || 'all';
@@ -63,7 +63,7 @@
         var s = sc[a.id], nc = t.contacts.filter(function (c) { return c.accountId === a.id; });
         var ready = nc.filter(function (c) { return G.contactState(t, c) === 'ready'; }).length;
         var why = s.status === 'excluded' ? s.reasons[0] : s.status === 'research' ? s.research[0] : '';
-        return '<tr class="click" data-act="acc-open" data-id="' + a.id + '" tabindex="0"><td class="name"><b>' + esc(a.name) + (a.suggested ? ' <span class="badge info plain" title="Suggested by Claude; confirm the details">Suggested</span>' : '') + '</b><span>' + esc(a.domain) + (a.crmId ? ' · HS ' + esc(a.crmId) : '') + '</span></td>' +
+        return '<tr class="click" data-act="acc-open" data-id="' + a.id + '" tabindex="0"><td class="name"><b>' + esc(a.name) + (a.suggested ? ' <span class="badge info plain" title="Suggested by GTM Engine; confirm the details">Suggested</span>' : '') + '</b><span>' + esc(a.domain) + (a.crmId ? ' · HS ' + esc(a.crmId) : '') + '</span></td>' +
           '<td>' + esc(a.industry || '—') + '</td><td class="num">' + App.num(a.employees) + '</td><td>' + esc(a.country || '—') + '</td>' +
           '<td style="max-width:240px">' + (a.trigger.text ? '<span title="' + esc(a.trigger.text) + '">' + esc(a.trigger.text.length > 42 ? a.trigger.text.slice(0, 40) + '…' : a.trigger.text) + '</span><br><small class="muted">' + (a.trigger.date ? App.rel(a.trigger.date) : 'undated') + (a.trigger.url ? ' · sourced' : ' · no source') + '</small>' : '<span class="faint">—</span>') + '</td>' +
           '<td>' + scoreBar(s) + '</td><td>' + App.stateBadge(G.ACCOUNT_STATES, s.status) + (why ? '<br><small class="muted">' + esc(why) + '</small>' : '') + '</td>' +
@@ -371,7 +371,7 @@
     var miss = briefMissing(t, c);
     return '<div class="split wide-side"><div class="stack">' +
       (locked ? '<div class="note info">' + I('info') + '<span class="grow">Batches already drafted keep their own frozen copy. Edits here apply to the next batch you draft.</span></div>' : '') +
-      '<div class="card"><div class="card-h"><h2>Brief</h2><span id="cmp-badge"></span><button class="btn sm" data-act="ai-brief" data-id="' + c.id + '">' + I('sparkle') + 'Suggest with Claude</button></div><div class="card-b"><div class="fields">' +
+      '<div class="card"><div class="card-h"><h2>Brief</h2><span id="cmp-badge"></span><button class="btn sm" data-act="ai-brief" data-id="' + c.id + '">' + I('sparkle') + 'Suggest with GTM Engine</button></div><div class="card-b"><div class="fields">' +
         f('Campaign name', 'name') + f('Owner', 'owner', { hint: 'Gets replies when the CRM has no owner.' }) +
         f('Business objective', 'objective', { full: true, text: true, rows: 2 }) +
         f('Persona', 'personaId', { select: icp ? icp.personas.map(function (p) { return { value: p.id, label: p.name + ' (' + p.priority + ')' }; }) : [] }) +
@@ -394,7 +394,7 @@
         '<div class="small muted">' + I('info') + ' <b>{{personalization}}</b> is filled only from a dated, sourced account trigger. <b>{{question}}</b> comes from the persona: inferred pain is asked, never asserted. Empty lines collapse when a token has nothing to say.</div>' +
       '</div></div></div>' +
       '<div class="sticky stack"><div class="card"><div class="card-h"><h2>Live preview</h2></div><div class="card-b stack sm" id="cmp-preview" data-id="' + c.id + '"></div></div>' +
-      '<div class="card"><div class="card-b stack sm"><div class="stack sm" id="cmp-ready"></div><button class="btn" data-act="cmp-claude" data-id="' + c.id + '">' + I('copy') + 'Copy Claude drafting prompt</button>' +
+      '<div class="card"><div class="card-b stack sm"><div class="stack sm" id="cmp-ready"></div><button class="btn" data-act="cmp-claude" data-id="' + c.id + '">' + I('copy') + 'Copy AI drafting prompt</button>' +
         '<button class="btn ghost danger sm" data-act="cmp-delete" data-id="' + c.id + '">Delete campaign</button></div></div></div></div>';
   }
   App.refreshers['cmp-preview'] = function () {
@@ -475,9 +475,9 @@
     var rows = b ? b.rows : G.batchCandidates(t, c).contacts.map(function (x) { var d = G.renderDraft(t, c, x, G.activeICP(t)); return { contactId: x.id, accountId: x.accountId, email: x.email, personalization: d.personalization }; });
     var txt = G.claudePacket(t, c, rows);
     App.modal({
-      title: 'Claude drafting prompt', sub: 'A minimal, client-scoped context packet: approved persona, usable proof and cited facts only. Paste it into Claude, then paste improved copy back into each row of the batch, which will need approval again.', wide: true,
+      title: 'AI drafting prompt', sub: 'A minimal, client-scoped context packet: approved persona, usable proof and cited facts only. Paste it into your AI assistant, then paste improved copy back into each row of the batch, which will need approval again.', wide: true,
       body: '<textarea readonly rows="16" style="font:12px/1.5 var(--mono)">' + esc(txt) + '</textarea>',
-      actions: [{ label: 'Close', cls: 'ghost' }, { label: 'Copy prompt', cls: 'primary', icon: 'copy', onClick: function () { App.copy(txt, 'Prompt copied'); G.log(t, 'Operator', 'Copied Claude context packet', (c.name || '') + ' · ' + rows.length + ' recipients'); App.save(); } }]
+      actions: [{ label: 'Close', cls: 'ghost' }, { label: 'Copy prompt', cls: 'primary', icon: 'copy', onClick: function () { App.copy(txt, 'Prompt copied'); G.log(t, 'Operator', 'Copied AI drafting prompt', (c.name || '') + ' · ' + rows.length + ' recipients'); App.save(); } }]
     });
   };
 
@@ -516,7 +516,7 @@
     if (st === 'approved') acts += '<button class="btn primary" data-act="bat-stage" data-b="' + b.id + '">' + I('download') + 'Export to Smartlead (stage)</button>';
     if (st === 'staged') acts += '<button class="btn primary" data-act="bat-ack" data-b="' + b.id + '">' + I('upload') + 'Record provider acknowledgement</button><button class="btn" data-act="bat-ack-all" data-b="' + b.id + '">Provider accepted all exported rows</button>' + (unresolved.length ? '<button class="btn" data-act="bat-stage" data-b="' + b.id + '">' + I('download') + 'Retry unresolved rows only</button>' : '');
     if (st === 'enrolled') acts += '<button class="btn" data-act="bat-reconcile" data-b="' + b.id + '">' + I('check') + 'Mark reconciled</button>';
-    acts += '<span class="grow"></span><button class="btn ghost sm" data-act="cmp-claude" data-id="' + c.id + '" data-b="' + b.id + '">' + I('copy') + 'Claude prompt</button><button class="btn ghost sm" data-act="bat-sheet" data-b="' + b.id + '">' + I('download') + 'Internal sheet</button>' + (st !== 'enrolled' && st !== 'reconciled' && !intents.length ? '<button class="btn ghost sm" data-act="bat-archive" data-b="' + b.id + '">Archive</button>' : '');
+    acts += '<span class="grow"></span><button class="btn ghost sm" data-act="cmp-claude" data-id="' + c.id + '" data-b="' + b.id + '">' + I('copy') + 'AI prompt</button><button class="btn ghost sm" data-act="bat-sheet" data-b="' + b.id + '">' + I('download') + 'Internal sheet</button>' + (st !== 'enrolled' && st !== 'reconciled' && !intents.length ? '<button class="btn ghost sm" data-act="bat-archive" data-b="' + b.id + '">Archive</button>' : '');
     html += '<div class="row">' + acts + '</div>';
     if (b.history.length) html += '<details><summary class="small muted" style="cursor:pointer">History (' + b.history.length + ')</summary><div class="stack sm" style="margin-top:8px">' + b.history.slice().reverse().map(function (h) { return '<div class="small"><span class="muted">' + App.fmtDT(h.at) + '</span> · ' + esc(h.what) + '</div>'; }).join('') + '</div></details>';
     return html + '</div></div>';

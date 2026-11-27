@@ -105,7 +105,7 @@
     t.costs.push(
       { id: G.uid('cost'), at: ago(13), kind: 'Account sourcing', provider: 'Databar', credits: 160, amount: 19.2, estimated: false, note: '16 accounts' },
       { id: G.uid('cost'), at: ago(11), kind: 'Contact enrichment', provider: 'Clay', credits: 66, amount: 7.92, estimated: false, note: '11 contacts across 7 eligible or near-eligible accounts' },
-      { id: G.uid('cost'), at: ago(10), kind: 'Model usage', provider: 'Claude', credits: null, amount: 1.4, estimated: false, note: 'Drafting and review, batch 1' },
+      { id: G.uid('cost'), at: ago(10), kind: 'Model usage', provider: 'AI model', credits: null, amount: 1.4, estimated: false, note: 'Drafting and review, batch 1' },
       { id: G.uid('cost'), at: ago(1), kind: 'Contact enrichment', provider: 'Clay', credits: 36, amount: 4.32, estimated: true, note: 'Approved spend: 6 accounts pending enrichment' },
       { id: G.uid('cost'), at: ago(9), kind: 'Sending', provider: 'Smartlead', credits: null, amount: null, estimated: false, note: 'Seat cost not yet allocated to this client' }
     );

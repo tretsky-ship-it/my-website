@@ -7,7 +7,7 @@
 (function () {
   'use strict';
   var G = window.GTM, App = window.App, S = App.S, esc = App.esc, I = App.icon, A = App.act;
-  var SUGGESTED = 'Claude suggestion (unverified)';
+  var SUGGESTED = 'GTM Engine suggestion (unverified)';
 
   /* ================= Suggest accounts ================= */
   function icpSummary(icp) {
@@ -54,7 +54,7 @@
         '<td>' + (a.existing ? App.badge('muted', 'Already in list') : sc ? App.stateBadge(G.ACCOUNT_STATES, sc.status) : '') + (a.confidence === 'medium' ? '<br><span class="small faint">medium confidence</span>' : '') + '</td></tr>';
     }).join('');
     var fresh = c.accounts.filter(function (a) { return !a.existing; }).length;
-    return '<div class="note warn">' + I('alert') + '<span class="grow"><b>Suggestions, not verified data.</b> Claude suggests these from what it knows, without live search, so details can be out of date. They\'re imported labelled "unverified". Confirm each company (and find a dated, sourced trigger) before it\'s used in outreach.</span></div>' +
+    return '<div class="note warn">' + I('alert') + '<span class="grow"><b>Suggestions, not verified data.</b> GTM Engine suggests these from what its AI already knows, without live web search, so details can be out of date. They\'re imported labelled "unverified". Confirm each company (and find a dated, sourced trigger) before it\'s used in outreach.</span></div>' +
       '<div class="row"><span class="grow small muted">' + App.plural(fresh, 'new company', 'new companies') + ' · status shows how each would score against your ICP right now</span><button type="button" class="btn sm ghost" data-act="pick-all">Select all</button><button type="button" class="btn sm ghost" data-act="pick-none">Select none</button></div>' +
       '<div class="table-wrap" style="border:1px solid var(--line);border-radius:10px;max-height:52vh"><table class="t"><thead><tr><th></th><th>Company</th><th>Industry</th><th class="num">Employees</th><th>Country</th><th>Why it fits</th><th>Status</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
@@ -68,9 +68,9 @@
       var acc = G.accountByDomain(t, a.domain);
       if (!acc || acc.importedFrom !== SUGGESTED) return;
       acc.suggested = true;
-      acc.notes = ['Suggested by Claude: ' + a.why, a.city ? 'Location: ' + a.city : '', a.possibleTrigger ? 'Possible trigger to verify (find a dated source before using): ' + a.possibleTrigger : ''].filter(Boolean).join('\n');
+      acc.notes = ['Suggested by GTM Engine: ' + a.why, a.city ? 'Location: ' + a.city : '', a.possibleTrigger ? 'Possible trigger to verify (find a dated source before using): ' + a.possibleTrigger : ''].filter(Boolean).join('\n');
     });
-    G.log(t, 'Claude (suggestion)', 'Suggested accounts imported', r.added + ' added, ' + r.conflicts + ' sent to manual resolution');
+    G.log(t, 'GTM Engine (suggestion)', 'Suggested accounts imported', r.added + ' added, ' + r.conflicts + ' sent to manual resolution');
     App.save(); S.ui.af = 'all';
     if (S.route === 'accounts') App.render(); else App.go('#/accounts');
     App.toast(App.plural(r.added, 'company', 'companies') + ' added as unverified suggestions' + (r.conflicts ? '; ' + r.conflicts + ' need manual review' : ''));
@@ -79,7 +79,7 @@
     var t = S.t, icp = G.icpForScoring(t);
     if (!icp || !icp.industries.values.length) { App.toast('Set up the ICP first (at least target industries), so suggestions have something to match', 'bad'); App.go('#/icp'); return; }
     var m = App.modal({
-      title: 'Suggest accounts with Claude', sub: 'Claude proposes companies that match ICP v' + icp.v + (icp.status !== 'approved' ? ' (draft)' : '') + '. You review the list and choose which to import.',
+      title: 'Suggest accounts with GTM Engine', sub: 'GTM Engine proposes companies that match ICP v' + icp.v + (icp.status !== 'approved' ? ' (draft)' : '') + '. You review the list and choose which to import.',
       body: '<div class="field"><label>How many companies?</label><div class="seg" id="sg-n">' + [10, 25, 50].map(function (n) { return '<button type="button" data-n="' + n + '" class="' + (n === 25 ? 'on' : '') + '">' + n + '</button>'; }).join('') + '</div><input id="sg-custom" type="number" min="1" max="50" placeholder="Or type a number up to 50" style="max-width:240px;margin-top:8px"></div>' +
         '<div class="field"><label for="sg-focus">Anything to focus on? (optional)</label><input id="sg-focus" placeholder="e.g. only Ohio and Indiana, family-owned, food packaging"></div>' +
         '<div class="small muted">Companies already in your list or on the do-not-contact list are skipped. Larger lists take longer (about a minute for 50).</div>',

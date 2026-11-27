@@ -13,7 +13,14 @@
     set: function (k, v) { var s = JSON.stringify(v); try { if (LS) LS.setItem('gtm:' + k, s); else mem[k] = s; return true; } catch (e) { mem[k] = s; return false; } },
     del: function (k) { try { if (LS) LS.removeItem('gtm:' + k); } catch (e) { } delete mem[k]; },
     index: function () { return this.get('index') || []; },
-    load: function (id) { return this.get('tenant:' + id); },
+    load: function (id) {
+      var t = this.get('tenant:' + id);
+      if (!t) return t;
+      // Older versions labelled AI suggestions with the model's name; show them as GTM Engine instead.
+      var raw = JSON.stringify(t), fixed = raw.replace(/Claude \(suggestion\)/g, 'GTM Engine (suggestion)').replace(/Claude suggestion \(unverified\)/g, 'GTM Engine suggestion (unverified)')
+        .replace(/Suggested by Claude/g, 'Suggested by GTM Engine').replace(/"provider":"Claude"/g, '"provider":"AI model"').replace(/Copied Claude context packet/g, 'Copied AI drafting prompt');
+      return fixed === raw ? t : JSON.parse(fixed);
+    },
     save: function (t) {
       var ok = this.set('tenant:' + t.id, t);
       var idx = this.index().filter(function (x) { return x.id !== t.id; });
