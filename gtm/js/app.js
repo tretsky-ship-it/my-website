@@ -15,6 +15,12 @@
       { id: 'outcomes', label: 'Outcomes & replies', step: 7 },
       { id: 'brief', label: 'Weekly brief', step: 8 }
     ] },
+    { group: 'Sales intelligence', items: [
+      { id: 'calls', label: 'Calls', icon: 'mic' },
+      { id: 'deals', label: 'Deals', icon: 'deal' },
+      { id: 'trends', label: 'Call trends', icon: 'trend' },
+      { id: 'product', label: 'Product insights', icon: 'box' }
+    ] },
     { group: 'Improve', items: [
       { id: 'learning', label: 'Learning inbox', icon: 'learning' },
       { id: 'activity', label: 'Spend & activity', icon: 'activity' },

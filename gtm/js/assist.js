@@ -50,6 +50,14 @@
     return out.filter(Boolean).join('\n');
   }
   App.askClaude = function (o) { return ask(o); };
+  // Run one AI request without a dialog (for batch work). Rejects {code:'unavailable'} where the page can't reach the AI.
+  App.aiJSON = function (prompt) {
+    return getCap().then(function (s) {
+      if (!s) throw { code: 'unavailable' };
+      return s.json(prompt, { modelTier: 'default', cache: false }).catch(function (e) { if (e && e.code === 'invalid_json' && e.text) return parseLoose(e.text); throw e; });
+    });
+  };
+  App.parseLoose = function (x) { return parseLoose(x); };
   App.canSuggest = function (t) { return !!(t.profile.website || t.profile.offer || t.sources.length); };
 
   /* ---------- generic ask-Claude modal ---------- */

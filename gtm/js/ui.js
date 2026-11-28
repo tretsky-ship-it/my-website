@@ -19,7 +19,9 @@
       // Older versions labelled AI suggestions with the model's name; show them as GTM Engine instead.
       var raw = JSON.stringify(t), fixed = raw.replace(/Claude \(suggestion\)/g, 'GTM Engine (suggestion)').replace(/Claude suggestion \(unverified\)/g, 'GTM Engine suggestion (unverified)')
         .replace(/Suggested by Claude/g, 'Suggested by GTM Engine').replace(/"provider":"Claude"/g, '"provider":"AI model"').replace(/Copied Claude context packet/g, 'Copied AI drafting prompt');
-      return fixed === raw ? t : JSON.parse(fixed);
+      var out = fixed === raw ? t : JSON.parse(fixed);
+      out.calls = out.calls || []; out.deals = out.deals || []; out.productStatus = out.productStatus || {};
+      return out;
     },
     save: function (t) {
       var ok = this.set('tenant:' + t.id, t);
@@ -131,6 +133,10 @@
     flag: '<path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1zM4 22v-7"/>',
     print: '<path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/>',
     swap: '<path d="M7 16V4M3 8l4-4 4 4M17 8v12M21 16l-4 4-4-4"/>',
+    mic: '<rect x="9" y="2" width="6" height="12" rx="3"/><path d="M5 10a7 7 0 0 0 14 0M12 17v5M8 22h8"/>',
+    deal: '<rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2M2 13h20"/>',
+    trend: '<path d="M22 7l-8.5 8.5-5-5L2 17"/><path d="M16 7h6v6"/>',
+    box: '<path d="M21 8l-9-5-9 5 9 5 9-5zM3 8v8l9 5 9-5V8M12 13v8"/>',
     eye: '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8S1 12 1 12z"/><circle cx="12" cy="12" r="3"/>'
   };
   App.icon = function (n, cls) {

@@ -180,7 +180,7 @@
       },
       sources: [], proof: [], icp: [], accounts: [], conflicts: [], contacts: [], suppression: [],
       campaigns: [], batches: [], enrollments: [], events: [], tasks: [], observations: [],
-      proposals: [], costs: [], tests: [], audit: []
+      proposals: [], costs: [], tests: [], audit: [], calls: [], deals: [], productStatus: {}
     };
   };
   G.log = function (t, who, action, detail) {

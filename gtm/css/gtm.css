@@ -541,3 +541,27 @@ svg { flex: none; vertical-align: middle; }
 .stepper a.part .dot { border-color: var(--warn); color: var(--warn); background: var(--warn-bg); }
 .stepper .todo { font-size: 11px; font-weight: 500; color: var(--faint); margin-top: -4px; }
 .stepper a.part .todo { color: var(--warn); }
+
+/* sales intelligence */
+.meddic-dots { display: inline-flex; gap: 3px; }
+.meddic-dots i { width: 18px; height: 18px; border-radius: 5px; display: grid; place-items: center; font: 700 10px/1 var(--font); font-style: normal; background: var(--surface-3); color: var(--faint); }
+.meddic-dots i.known { background: var(--ok); color: #fff; }
+.meddic-dots i.partial { background: var(--warn-bg); color: var(--warn); border: 1px solid var(--warn-line); }
+.reasons { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; font-size: 13px; }
+.reasons li { display: flex; gap: 8px; align-items: flex-start; }
+.reasons li svg { width: 15px; height: 15px; margin-top: 2px; }
+.reasons li.good svg { color: var(--ok); }
+.reasons li.bad svg { color: var(--bad); }
+button.quote { display: block; text-align: left; border: 0; background: none; padding: 4px 0 0; margin: 0; font: italic 13px/1.5 var(--font); color: var(--muted); cursor: pointer; }
+button.quote:hover { color: var(--accent); }
+.transcript { max-height: 70vh; overflow: auto; padding: 8px 12px 14px; display: grid; gap: 8px; }
+.transcript .seg { padding: 8px 10px; border-radius: 10px; font-size: 13px; line-height: 1.5; background: var(--surface-2); border: 1px solid transparent; }
+.transcript .seg.us { background: var(--accent-soft); }
+.transcript .seg .who { font-size: 12px; font-weight: 700; margin-bottom: 2px; }
+.transcript .seg.hl { border-color: var(--warn); box-shadow: 0 0 0 3px var(--warn-bg); }
+.chip.side-seller { background: var(--accent-soft); border-color: var(--accent-line); color: var(--accent-strong); cursor: pointer; }
+.chip.side-buyer { background: var(--ok-bg); border-color: var(--ok-line); color: var(--ok); cursor: pointer; }
+.trend-row .bar { display: block; height: 5px; border-radius: 99px; background: var(--surface-3); margin: 6px 0 4px; overflow: hidden; }
+.trend-row .bar i { display: block; height: 100%; background: var(--accent); border-radius: 99px; }
+.trend-row .grow > span:last-child { display: block; }
+#view:focus { outline: none; }

@@ -74,6 +74,15 @@
     'ce-v': 'Whether a verification tool has checked this address. Only verified emails can go into a batch.',
     'ca-l': 'Optional link to their LinkedIn profile, so anyone can double-check who this is.',
 
+    'cl-x': 'The full call transcript. Speaker names matter: they let GTM Engine measure how much the buyer talked and separate what the buyer said from the seller. Most tools export lines like "Name: text" or "Name 0:05", which both work.',
+    'cl-f': 'Upload the transcript file instead of pasting. Fathom, Zoom, Gong, Teams and Meet exports (.txt, .vtt, .srt) all work.',
+    'cl-t': 'A name you\'ll recognise, e.g. "Acme discovery call". Defaults to the deal name and date.',
+    'cl-d': 'When the call happened. Trends and deal timelines use this date.',
+    'cl-deal': 'The HubSpot deal this call belongs to, so it counts toward that deal\'s health and MEDDIC. Create a deal here if it isn\'t in the list yet.',
+    'cl-acc': 'Optional. The company from your account list, so trends can count how many different companies raise each issue.',
+    'cl-go': 'Analyze straight after saving: questions, objections, pains, competitors, product feedback, MEDDIC and next steps.',
+    'lk-d': 'The deal this call belongs to.',
+
     /* Imports */
     'iw-src': 'Where the list came from, e.g. "Databar export, Nov 20". It\'s kept on each account so you can trace it later.',
     'iw-p': 'Which tool found these contacts, e.g. Clay or Databar.',
