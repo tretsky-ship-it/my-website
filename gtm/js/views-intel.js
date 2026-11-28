@@ -23,12 +23,12 @@
       var c = S.param && callById(S.param);
       if (c) return { title: c.title || 'Call', actions: '<a class="btn ghost" href="#/calls">All calls</a><button class="btn" data-act="call-link" data-id="' + c.id + '">' + I('deal') + (c.dealId ? 'Change deal' : 'Link to deal') + '</button><button class="btn primary" data-act="call-analyze" data-id="' + c.id + '">' + I('sparkle') + (c.analysis ? 'Re-analyze' : 'Analyze call') + '</button>' };
       var un = T().calls.filter(function (x) { return !x.analysis; }).length;
-      return { title: 'Calls', actions: (un ? '<button class="btn" data-act="calls-analyze-all">' + I('sparkle') + 'Analyze ' + un + ' new</button>' : '') + '<button class="btn primary" data-act="call-add">' + I('plus') + 'Add call</button>' };
+      return { title: 'Calls', actions: (App.hasSampleCalls(T()) ? '<button class="btn ghost" data-act="ci-sample-remove">Remove sample calls</button>' : '') + (un ? '<button class="btn" data-act="calls-analyze-all">' + I('sparkle') + 'Analyze ' + un + ' new</button>' : '') + '<button class="btn primary" data-act="call-add">' + I('plus') + 'Add call</button>' };
     },
     render: function (param) {
       var t = T();
       if (param) { var c = callById(param); return c ? callDetail(t, c) : '<p>That call no longer exists. <a href="#/calls">Back to calls</a></p>'; }
-      if (!t.calls.length) return App.emptyState('mic', 'Bring in your sales calls', 'Paste a transcript or upload one from Fathom, Zoom, Gong or anywhere else. GTM Engine finds the questions, objections, pains, competitors, product feedback and next steps, scores the call with MEDDIC, and rolls it up to the deal and to trends across all calls.', '<button class="btn primary" data-act="call-add">' + I('plus') + 'Add the first call</button>');
+      if (!t.calls.length) return App.emptyState('mic', 'Bring in your sales calls', 'Paste a transcript or upload one from Fathom, Zoom, Gong or anywhere else. GTM Engine finds the questions, objections, pains, competitors, product feedback and next steps, scores the call with MEDDIC, and rolls it up to the deal and to trends across all calls.', '<button class="btn primary" data-act="call-add">' + I('plus') + 'Add the first call</button><button class="btn" data-act="ci-sample-add">' + I('sparkle') + 'Add 10 sample calls</button>');
       var rows = t.calls.slice().sort(function (a, b) { return String(b.date).localeCompare(String(a.date)); });
       return '<div class="card"><div class="table-wrap"><table class="t"><thead><tr><th>Call</th><th>Deal</th><th>How it went</th><th class="num">Buyer talk</th><th>Next step</th><th class="num">Objections</th></tr></thead><tbody>' +
         rows.map(function (c) {

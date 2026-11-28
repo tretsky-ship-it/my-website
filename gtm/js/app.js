@@ -18,6 +18,7 @@
     { group: 'Sales intelligence', items: [
       { id: 'calls', label: 'Calls', icon: 'mic' },
       { id: 'deals', label: 'Deals', icon: 'deal' },
+      { id: 'insights', label: 'Call insights', icon: 'sparkle' },
       { id: 'trends', label: 'Call trends', icon: 'trend' },
       { id: 'product', label: 'Product insights', icon: 'box' }
     ] },
